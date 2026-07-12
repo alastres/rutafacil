@@ -45,8 +45,11 @@ inicio"). El share target **no funciona** en `localhost` sin instalar.
 - **Enlaces acortados** (`maps.app.goo.gl`): el navegador no puede resolver la
   redirección (CORS). La app lo detecta y pide compartir desde Maps directamente.
   Plan: Cloudflare Worker gratuito que resuelva la redirección (fase 2 del PLAN).
-- **Distancias en línea recta**: el orden se calcula con haversine, no por calles.
-  Plan: openrouteservice (free tier, 40k req/mes) cuando el piloto lo pida.
+- **Rutas por calles (en línea)**: cuando hay señal, el orden y la geometría se
+  resuelven por calles con servidores públicos de OSRM (`routing.openstreetmap.de`
+  y el demo de OSRM), sin API key; si todos fallan, se cae a haversine en línea
+  recta. Para más volumen/fiabilidad: openrouteservice (free tier) o un OSRM
+  propio vía `VITE_OSRM_BASE` (PLAN fase 4).
 - **iOS**: Safari no soporta `share_target`; la entrada manual (pegar enlace) sí
   funciona. El mercado objetivo inicial es Android.
 
