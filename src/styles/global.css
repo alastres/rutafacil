@@ -1,0 +1,512 @@
+/* ============ Tokens: señalética de carretera a pleno sol ============ */
+:root {
+  --asfalto: #211e1a;        /* texto y franja de carretera */
+  --asfalto-claro: #38342e;
+  --pavimento: #e9e7e2;      /* fondo: concreto de día */
+  --pintura: #f7c600;        /* amarillo pintura vial: acento único */
+  --pintura-blanca: #fbfaf7; /* tarjetas: pintura blanca */
+  --senal-verde: #1d7a46;    /* verde señal de destino: entregado */
+  --cono: #d9481c;           /* naranja cono: errores */
+  --tinta-suave: #6f6859;
+
+  --font-display: "Overpass", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-data: ui-monospace, "Cascadia Mono", "Roboto Mono", monospace;
+
+  --road-w: 52px;
+  --radius: 6px;
+  --border: 3px solid var(--asfalto);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--pavimento);
+  color: var(--asfalto);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--pintura);
+  outline-offset: 2px;
+}
+
+/* ============ Cabecera: placa de matrícula ============ */
+.header {
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  padding: 14px 16px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: stretch;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wordmark-ruta {
+  background: var(--pintura);
+  color: var(--asfalto);
+  padding: 5px 8px 3px;
+  border-radius: 4px 0 0 4px;
+}
+
+.wordmark-facil {
+  background: var(--pintura-blanca);
+  color: var(--asfalto);
+  padding: 5px 8px 3px;
+  border-radius: 0 4px 4px 0;
+  border-left: 3px dashed var(--asfalto);
+}
+
+.header-ticker {
+  margin-top: 8px;
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pintura);
+  display: flex;
+  gap: 14px;
+}
+
+.header-ticker span::before {
+  content: "▸ ";
+  opacity: 0.6;
+}
+
+/* ============ Entrada manual ============ */
+.add-stop {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 4px;
+}
+
+.add-stop input {
+  flex: 1;
+  min-width: 0;
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--pintura-blanca);
+  font-size: 0.95rem;
+}
+
+.add-stop input::placeholder {
+  color: var(--tinta-suave);
+}
+
+.add-stop button {
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--asfalto);
+  color: var(--pintura);
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  padding: 0 16px;
+}
+
+/* ============ La carretera viva ============ */
+.road-list {
+  list-style: none;
+  margin: 0;
+  padding: 16px 16px 130px calc(var(--road-w) + 24px);
+  position: relative;
+  flex: 1;
+}
+
+/* franja de asfalto */
+.road-list::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 16px;
+  width: var(--road-w);
+  background: var(--asfalto);
+  border-radius: 4px;
+}
+
+/* línea central discontinua, animada */
+.road-list::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(16px + var(--road-w) / 2 - 2px);
+  width: 4px;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--pintura) 0 22px,
+    transparent 22px 44px
+  );
+  animation: road-flow 1.6s linear infinite;
+  animation-play-state: paused;
+}
+
+.road-list.is-moving::after {
+  animation-play-state: running;
+}
+
+@keyframes road-flow {
+  to {
+    background-position: 0 44px;
+  }
+}
+
+.road-item {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+/* hito numerado sobre la carretera */
+.marker {
+  position: absolute;
+  left: calc(-1 * var(--road-w) / 2 - 24px - 17px);
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pintura);
+  border: 3px solid var(--pintura-blanca);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1rem;
+  color: var(--asfalto);
+  z-index: 2;
+}
+
+.road-item.is-delivered .marker {
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+}
+
+/* ============ Tarjeta de parada: señal pintada ============ */
+.stop-card {
+  background: var(--pintura-blanca);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.road-item.is-next .stop-card {
+  border-color: var(--asfalto);
+  box-shadow: 6px 6px 0 var(--pintura);
+}
+
+.stop-eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.road-item.is-next .stop-eyebrow strong {
+  color: var(--asfalto);
+  background: var(--pintura);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.stop-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.stop-label {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 2px 0;
+  color: var(--asfalto);
+}
+
+.stop-remove {
+  border: none;
+  background: transparent;
+  color: var(--tinta-suave);
+  font-size: 1rem;
+  padding: 4px 6px;
+  line-height: 1;
+}
+
+.stop-remove:hover {
+  color: var(--cono);
+}
+
+.stop-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  text-decoration: none;
+  text-align: center;
+  border: 2px solid var(--asfalto);
+}
+
+.btn-nav {
+  background: var(--pintura);
+  color: var(--asfalto);
+  flex: 1;
+}
+
+.btn-done {
+  background: var(--pintura-blanca);
+  color: var(--senal-verde);
+  border-color: var(--senal-verde);
+  flex: 1;
+}
+
+.road-item.is-delivered .stop-card {
+  opacity: 0.72;
+  background: var(--pavimento);
+}
+
+/* sello ENTREGADO con franjas de peligro */
+.stamp {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-8deg);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--senal-verde);
+  border: 3px solid var(--senal-verde);
+  border-radius: 4px;
+  padding: 3px 10px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 8px,
+      rgba(29, 122, 70, 0.12) 8px 16px
+    ),
+    var(--pintura-blanca);
+  pointer-events: none;
+}
+
+/* ============ Estado vacío: cartel de obra ============ */
+.empty {
+  margin: 28px 16px;
+  text-align: center;
+}
+
+.empty-sign {
+  background: var(--pintura);
+  border: 4px solid var(--asfalto);
+  border-radius: 10px;
+  padding: 22px 18px 18px;
+  box-shadow: 8px 8px 0 var(--asfalto);
+  transform: rotate(-1.2deg);
+}
+
+.empty-sign h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.empty-sign p {
+  margin: 10px 0 0;
+  font-size: 0.95rem;
+}
+
+.empty-steps {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  text-align: left;
+  display: grid;
+  gap: 10px;
+}
+
+.empty-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  background: var(--pintura-blanca);
+  border: 2px solid var(--asfalto);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.empty-steps .n {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.3rem;
+  color: var(--tinta-suave);
+}
+
+/* ============ Barra inferior ============ */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: var(--asfalto);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 20;
+}
+
+.btn-optimize {
+  flex: 1;
+  background: var(--pintura);
+  color: var(--asfalto);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px;
+}
+
+.btn-optimize:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-clear,
+.btn-map {
+  background: transparent;
+  color: var(--pintura-blanca);
+  border: 2px solid var(--asfalto-claro);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  padding: 12px 10px;
+}
+
+/* ============ Mapa ============ */
+.map-wrap {
+  height: 46dvh;
+  margin: 12px 16px 0;
+  border: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.map-marker {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--pintura);
+  border: 3px solid var(--asfalto);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.85rem;
+  color: var(--asfalto);
+}
+
+.map-marker.is-delivered {
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+}
+
+/* ============ Avisos ============ */
+.toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  z-index: 40;
+  width: calc(100% - 48px);
+  max-width: 432px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border-left: 6px solid var(--pintura);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  box-shadow: 0 10px 30px rgba(33, 30, 26, 0.35);
+}
+
+.toast.is-error {
+  border-left-color: var(--cono);
+}
+
+/* ============ Movimiento reducido ============ */
+@media (prefers-reduced-motion: reduce) {
+  .road-list::after {
+    animation: none;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

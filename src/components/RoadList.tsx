@@ -1,0 +1,129 @@
+import { AnimatePresence, motion } from "motion/react";
+import { haversineKm, type LatLng } from "../lib/geo";
+import { googleMapsNavUrl } from "../lib/nav";
+import { useRouteStore, type Stop } from "../state/routeStore";
+
+export function RoadList({ moving }: { moving: boolean }) {
+  const stops = useRouteStore((s) => s.stops);
+  const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const origin = useRouteStore((s) => s.origin);
+  const nextId = stops.find((s) => !s.delivered)?.id;
+
+  // Distancia desde el punto anterior (solo tiene sentido tras optimizar)
+  const legKm = new Map<string, number>();
+  if (optimizedKm !== null && origin) {
+    let prev: LatLng = origin;
+    for (const stop of stops) {
+      if (stop.delivered) continue;
+      legKm.set(stop.id, haversineKm(prev, stop));
+      prev = stop;
+    }
+  }
+
+  return (
+    <ol className={`road-list${moving ? " is-moving" : ""}`}>
+      <AnimatePresence initial={false}>
+        {stops.map((stop, i) => (
+          <StopItem
+            key={stop.id}
+            stop={stop}
+            position={i + 1}
+            isNext={stop.id === nextId && optimizedKm !== null}
+            legKm={legKm.get(stop.id)}
+          />
+        ))}
+      </AnimatePresence>
+    </ol>
+  );
+}
+
+function StopItem({
+  stop,
+  position,
+  isNext,
+  legKm,
+}: {
+  stop: Stop;
+  position: number;
+  isNext: boolean;
+  legKm?: number;
+}) {
+  const renameStop = useRouteStore((s) => s.renameStop);
+  const removeStop = useRouteStore((s) => s.removeStop);
+  const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
+
+  const classes = [
+    "road-item",
+    stop.delivered ? "is-delivered" : "",
+    isNext ? "is-next" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <motion.li
+      layout
+      className={classes}
+      initial={{ opacity: 0, y: 28, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 80, transition: { duration: 0.18 } }}
+      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+    >
+      <span className="marker" aria-hidden="true">
+        {stop.delivered ? "✓" : position}
+      </span>
+      <article className="stop-card">
+        <div className="stop-eyebrow">
+          {isNext ? <strong>Siguiente</strong> : <span>Parada {position}</span>}
+          {legKm !== undefined && <span>+{legKm.toFixed(1)} km</span>}
+        </div>
+        <div className="stop-row">
+          <input
+            className="stop-label"
+            value={stop.label}
+            onChange={(e) => renameStop(stop.id, e.target.value)}
+            aria-label={`Nombre de la parada ${position}`}
+          />
+          <button
+            className="stop-remove"
+            onClick={() => removeStop(stop.id)}
+            aria-label={`Quitar ${stop.label}`}
+          >
+            ✕
+          </button>
+        </div>
+        {!stop.delivered && (
+          <div className="stop-actions">
+            <a
+              className="btn btn-nav"
+              href={googleMapsNavUrl(stop)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Navegar ➜
+            </a>
+            <button
+              className="btn btn-done"
+              onClick={() => toggleDelivered(stop.id)}
+            >
+              Entregada ✓
+            </button>
+          </div>
+        )}
+        {stop.delivered && (
+          <motion.button
+            className="stamp"
+            style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={() => toggleDelivered(stop.id)}
+            initial={{ scale: 2.4, opacity: 0, rotate: -20 }}
+            animate={{ scale: 1, opacity: 1, rotate: -8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 16 }}
+            title="Tocar para deshacer"
+          >
+            Entregado
+          </motion.button>
+        )}
+      </article>
+    </motion.li>
+  );
+}
