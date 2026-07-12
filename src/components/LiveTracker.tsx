@@ -1,0 +1,87 @@
+import { useEffect, useRef } from "react";
+import { toast } from "react-hot-toast";
+import { useRouteStore, type Stop } from "../state/routeStore";
+import { tripThroughStreets } from "../lib/routing";
+import { distanceToPolylineKm, type LatLng } from "../lib/geo";
+
+/** A partir de qué desviación (m) se recalcula la ruta */
+const DEVIATION_M = 60;
+/** Tiempo mínimo entre recálculos automáticos */
+const REROUTE_COOLDOWN_MS = 20000;
+
+function notifyError(text: string) {
+  toast(text, { icon: "⚠️", className: "rht rht--error" });
+}
+
+/**
+ * Observa la posición GPS del usuario en vivo (watchPosition) y la guarda en
+ * el store para que el mapa y la lista la reflejen. Si el usuario se sale de la
+ * ruta (desviación > DEVIATION_M), recalcula automáticamente desde su posición.
+ * No renderiza nada: es un efecto global montado en App.
+ */
+export function LiveTracker() {
+  const tracking = useRouteStore((s) => s.tracking);
+  const lastReroute = useRef(0);
+
+  useEffect(() => {
+    if (!tracking) return;
+    if (!navigator.geolocation) {
+      notifyError("Este dispositivo no soporta geolocalización.");
+      useRouteStore.getState().stopTracking();
+      return;
+    }
+
+    let rerouting = false;
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const p: LatLng = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        };
+        const store = useRouteStore.getState();
+        store.setLive(p);
+
+        const { geometry, stops } = store;
+        const pending = stops.filter((s) => !s.delivered);
+        if (geometry && pending.length > 0 && !rerouting) {
+          const devM = distanceToPolylineKm(p, geometry) * 1000;
+          const now = Date.now();
+          if (devM > DEVIATION_M && now - lastReroute.current > REROUTE_COOLDOWN_MS) {
+            lastReroute.current = now;
+            rerouting = true;
+            void reroute(pending, p).finally(() => {
+              rerouting = false;
+            });
+          }
+        }
+      },
+      (err) => {
+        notifyError(`No puedo seguir tu ubicación: ${err.message}`);
+        useRouteStore.getState().stopTracking();
+      },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(id);
+  }, [tracking]);
+
+  return null;
+}
+
+async function reroute(pending: Stop[], from: LatLng) {
+  const trip = await tripThroughStreets(from, pending);
+  if (!trip) return;
+  const ordered = trip.order.map((i, idx) => ({
+    ...pending[i],
+    legKm: trip.legsKm[idx],
+  }));
+  useRouteStore.getState().applyOptimization({
+    ordered,
+    origin: from,
+    km: trip.distanceKm,
+    durationMin: trip.durationMin,
+    geometry: trip.coordinates,
+    byStreets: true,
+  });
+  toast("Ruta recalculada desde tu posición ✓", { icon: "✓", className: "rht" });
+}

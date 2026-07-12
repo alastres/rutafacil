@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { googleMapsNavUrl } from "../lib/nav";
+import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
 
 export function RoadList({ moving }: { moving: boolean }) {
@@ -7,8 +8,18 @@ export function RoadList({ moving }: { moving: boolean }) {
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
   const byStreets = useRouteStore((s) => s.byStreets);
   const origin = useRouteStore((s) => s.origin);
+  const live = useRouteStore((s) => s.live);
   const optimized = optimizedKm !== null;
-  const nextId = stops.find((s) => !s.delivered)?.id;
+  const nextStop = stops.find((s) => !s.delivered);
+  const nextId = nextStop?.id;
+
+  // Distancia/ETA en vivo desde la posición GPS al siguiente punto
+  let liveInfo: string | null = null;
+  if (live && nextStop) {
+    const km = haversineKm(live, nextStop) * 1.25; // factor urbano (calles + tránsito)
+    const min = Math.round((km / 20) * 60);
+    liveInfo = `a ${km.toFixed(1)} km · ~${min} min`;
+  }
 
   return (
     <ol className={`road-list${moving ? " is-moving" : ""}`}>
@@ -18,7 +29,15 @@ export function RoadList({ moving }: { moving: boolean }) {
             TÚ
           </span>
           <div className="origin-chip">
-            Punto de partida · {byStreets ? "ruta por calles" : "línea recta"}
+            {live ? (
+              <>
+                Siguiendo en vivo · {liveInfo}
+              </>
+            ) : (
+              <>
+                Punto de partida · {byStreets ? "ruta por calles" : "línea recta"}
+              </>
+            )}
           </div>
         </li>
       )}

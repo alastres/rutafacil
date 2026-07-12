@@ -2,9 +2,12 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouteStore } from "../state/routeStore";
+import { fetchIncidents } from "../lib/routing";
 
-/**
- * Mapa base con Esri World Street Map: calles muy detalladas y actualizadas
+const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
+const EMPTY_FC = { type: "FeatureCollection", features: [] };
+
+/** Mapa base con Esri World Street Map: calles muy detalladas y actualizadas
  * (datos comerciales), sin API key. Sustituye a las teselas de OSM, que pueden
  * no mostrar calles recientes o locales. El ruteo sigue por OSRM (datos OSM).
  * Esri exige su atribución.
@@ -30,10 +33,13 @@ export default function MapView() {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const liveMarkerRef = useRef<maplibregl.Marker | null>(null);
   const stops = useRouteStore((s) => s.stops);
   const origin = useRouteStore((s) => s.origin);
   const geometry = useRouteStore((s) => s.geometry);
   const byStreets = useRouteStore((s) => s.byStreets);
+  const live = useRouteStore((s) => s.live);
+  const tracking = useRouteStore((s) => s.tracking);
 
   useEffect(() => {
     if (!container.current) return;
@@ -69,9 +75,13 @@ export default function MapView() {
     return () => {
       map.remove();
       mapRef.current = null;
+      markersRef.current = [];
+      liveMarkerRef.current?.remove();
+      liveMarkerRef.current = null;
     };
   }, []);
 
+  // Paradas + línea de ruta + marcador de origen (oculto mientras se sigue en vivo)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -85,7 +95,7 @@ export default function MapView() {
         .setLngLat([stop.lng, stop.lat])
         .addTo(map);
     });
-    if (origin) {
+    if (origin && !tracking) {
       const el = document.createElement("div");
       el.className = "map-marker is-origin";
       el.textContent = "TÚ";
@@ -119,13 +129,151 @@ export default function MapView() {
     if (map.isStyleLoaded()) updateLine();
     else map.once("load", updateLine);
 
-    if (stops.length > 0 || origin) {
+    if (!tracking && (stops.length > 0 || origin)) {
       const bounds = new maplibregl.LngLatBounds();
-      stops.forEach((s) => bounds.extend([s.lng, s.lat]));
-      if (origin) bounds.extend([origin.lng, origin.lat]);
-      map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 600 });
+      stops.forEach((s) => {
+        if (Number.isFinite(s.lng) && Number.isFinite(s.lat)) {
+          bounds.extend([s.lng, s.lat]);
+        }
+      });
+      if (origin && Number.isFinite(origin.lng) && Number.isFinite(origin.lat)) {
+        bounds.extend([origin.lng, origin.lat]);
+      }
+      try {
+        // Cancela cualquier animación de cámara en curso (p. ej. un easeTo de
+        // seguimiento) para no chocar con fitBounds y evitar "already running"
+        map.stop();
+        map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 600 });
+      } catch {
+        // Nunca debe romper la app por un ajuste de cámara
+      }
     }
-  }, [stops, origin, geometry, byStreets]);
+  }, [stops, origin, geometry, byStreets, tracking]);
+
+  // Marcador "TÚ" en vivo + la cámara sigue al usuario mientras se rastrea
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || map !== mapRef.current) return;
+
+    const placeLiveMarker = (p: { lat: number; lng: number }) => {
+      if (!liveMarkerRef.current) {
+        const el = document.createElement("div");
+        el.className = "map-marker is-origin is-live";
+        el.textContent = "TÚ";
+        liveMarkerRef.current = new maplibregl.Marker({ element: el }).addTo(map);
+      }
+      liveMarkerRef.current.setLngLat([p.lng, p.lat]);
+    };
+
+    if (live && tracking) {
+      try {
+        const pos = live;
+        if (!Number.isFinite(pos.lng) || !Number.isFinite(pos.lat)) return;
+        placeLiveMarker(pos);
+        // Solo mueve la cámara si el usuario se salió del viewport (evita
+        // animaciones constantes y solapadas). Cancela cualquier animación
+        // previa para no disparar "already running".
+        const follow = () => {
+          if (map.isMoving()) return;
+          map.stop();
+          map.easeTo({ center: [pos.lng, pos.lat], duration: 800 });
+        };
+        if (map.loaded()) {
+          const inView = map.getBounds().contains([pos.lng, pos.lat]);
+          if (!inView) follow();
+        } else {
+          map.once("load", follow);
+        }
+      } catch {
+        // Si falla el marcador/seguimiento, no debe romper la app
+      }
+    } else {
+      liveMarkerRef.current?.remove();
+      liveMarkerRef.current = null;
+    }
+
+    return () => {
+      liveMarkerRef.current?.remove();
+      liveMarkerRef.current = null;
+    };
+  }, [live, tracking]);
+
+  // Incidencias de tráfico (TomTom) — solo si hay llave configurada
+  useEffect(() => {
+    if (!TOMTOM_KEY) return;
+    const map = mapRef.current;
+    if (!map) return;
+
+    const addLayer = () => {
+      if (map.getSource("incidents")) return;
+      map.addSource("incidents", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "incidents-layer",
+        type: "circle",
+        source: "incidents",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#d9481c",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
+        },
+      });
+      map.on("click", "incidents-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f || f.geometry.type !== "Point") return;
+        const coords = f.geometry.coordinates as [number, number];
+        new maplibregl.Popup({ closeButton: true, offset: 10 })
+          .setLngLat(coords)
+          .setHTML(
+            `<strong>Incidencia</strong><br>${String(f.properties?.category ?? "")}`,
+          )
+          .addTo(map);
+      });
+    };
+
+    const loadIncidents = async () => {
+      const b = map.getBounds();
+      const inc = await fetchIncidents({
+        minLng: b.getWest(),
+        minLat: b.getSouth(),
+        maxLng: b.getEast(),
+        maxLat: b.getNorth(),
+      });
+      const src = map.getSource("incidents") as maplibregl.GeoJSONSource | undefined;
+      if (src && inc) {
+        src.setData({
+          type: "FeatureCollection",
+          features: inc.map((i) => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [i.lng, i.lat] },
+            properties: { category: i.category },
+          })),
+        });
+      }
+    };
+
+    let t: number | undefined;
+    const onMoveEnd = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(loadIncidents, 600);
+    };
+
+    if (map.isStyleLoaded()) {
+      addLayer();
+      void loadIncidents();
+    } else {
+      map.once("load", () => {
+        addLayer();
+        void loadIncidents();
+      });
+    }
+    map.on("moveend", onMoveEnd);
+
+    return () => {
+      map.off("moveend", onMoveEnd);
+      window.clearTimeout(t);
+    };
+  }, []);
 
   return <div className="map-wrap" ref={container} />;
 }

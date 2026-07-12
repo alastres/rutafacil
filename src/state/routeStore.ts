@@ -32,12 +32,19 @@ interface RouteState {
   byStreets: boolean;
   origin: LatLng | null;
   geometry: [number, number][] | null;
+  /** Posición GPS en vivo del usuario mientras se sigue la ruta */
+  live: LatLng | null;
+  /** true = geolocalización observando en vivo */
+  tracking: boolean;
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
   applyOptimization: (result: OptimizationResult) => void;
+  setLive: (pos: LatLng | null) => void;
+  startTracking: () => void;
+  stopTracking: () => void;
 }
 
 let counter = 0;
@@ -59,6 +66,8 @@ export const useRouteStore = create<RouteState>()(
       byStreets: false,
       origin: null,
       geometry: null,
+      live: null,
+      tracking: false,
 
       addStop: (lat, lng, label) =>
         set((s) => ({
@@ -95,7 +104,20 @@ export const useRouteStore = create<RouteState>()(
         })),
 
       clearRoute: () =>
-        set({ stops: [], origin: null, byStreets: false, ...invalidated }),
+        set({
+          stops: [],
+          origin: null,
+          byStreets: false,
+          live: null,
+          tracking: false,
+          ...invalidated,
+        }),
+
+      setLive: (pos) => set({ live: pos }),
+
+      startTracking: () => set({ tracking: true, live: null }),
+
+      stopTracking: () => set({ tracking: false, live: null }),
 
       applyOptimization: ({ ordered, origin, km, durationMin, geometry, byStreets }) => {
         // Las entregadas quedan al frente (ya pasaste por ahí)

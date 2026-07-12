@@ -8,6 +8,8 @@ import { AddStop } from "./components/AddStop";
 import { EmptyState } from "./components/EmptyState";
 import { RoadList } from "./components/RoadList";
 import { OptimizeBar } from "./components/OptimizeBar";
+import { LiveTracker } from "./components/LiveTracker";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -90,7 +92,7 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <Header />
       <AddStop onSubmit={ingest} onNotify={notify} />
       {showMap && stops.length > 0 && (
@@ -109,6 +111,7 @@ export default function App() {
         showMap={showMap}
         onToggleMap={() => setShowMap((v) => !v)}
       />
+      <LiveTracker />
       <Toaster
         position="bottom-center"
         containerStyle={{ bottom: 92, left: 0, right: 0 }}
@@ -127,6 +130,6 @@ export default function App() {
           },
         }}
       />
-    </>
+    </ErrorBoundary>
   );
 }

@@ -43,6 +43,10 @@ export function OptimizeBar({
   const stops = useRouteStore((s) => s.stops);
   const applyOptimization = useRouteStore((s) => s.applyOptimization);
   const clearRoute = useRouteStore((s) => s.clearRoute);
+  const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const tracking = useRouteStore((s) => s.tracking);
+  const startTracking = useRouteStore((s) => s.startTracking);
+  const stopTracking = useRouteStore((s) => s.stopTracking);
   const [busy, setBusy] = useState(false);
 
   const pending = stops.filter((s) => !s.delivered);
@@ -148,6 +152,14 @@ export function OptimizeBar({
     <div className="bottom-bar">
       <button className="btn-map" onClick={onToggleMap}>
         {showMap ? "Lista" : "Mapa"}
+      </button>
+      <button
+        className={`btn-track${tracking ? " is-on" : ""}`}
+        onClick={() => (tracking ? stopTracking() : startTracking())}
+        disabled={busy || optimizedKm === null}
+        title="Seguir mi ubicación en tiempo real y recalcular si me desvío"
+      >
+        {tracking ? "Parar" : "Seguir"}
       </button>
       <button
         className="btn-optimize"

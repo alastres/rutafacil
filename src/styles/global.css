@@ -485,6 +485,75 @@ input {
   padding: 12px 10px;
 }
 
+.btn-track {
+  background: transparent;
+  color: var(--pintura-blanca);
+  border: 2px solid var(--asfalto-claro);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  padding: 12px 10px;
+}
+
+.btn-track.is-on {
+  background: var(--senal-verde);
+  border-color: var(--senal-verde);
+  color: var(--pintura-blanca);
+}
+
+/* Marcador de posición en vivo: pulso para distinguirlo del origen */
+.map-marker.is-live {
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+  border-color: var(--pintura-blanca);
+  animation: live-pulse 1.4s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(29, 122, 70, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(29, 122, 70, 0);
+  }
+}
+
+/* Popup de incidencias de tráfico */
+.maplibregl-popup-content {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--cono);
+}
+
+/* Fallback de ErrorBoundary */
+.error-boundary {
+  margin: 24px 16px;
+  padding: 20px;
+  background: var(--pintura-blanca);
+  border: 3px solid var(--cono);
+  border-radius: var(--radius);
+}
+
+.error-boundary h2 {
+  font-family: var(--font-display);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.error-boundary button {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border: 2px solid var(--asfalto);
+  border-radius: var(--radius);
+  background: var(--pintura);
+}
+
 /* ============ Mapa ============ */
 .map-wrap {
   height: 46dvh;
