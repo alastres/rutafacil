@@ -3,18 +3,27 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouteStore } from "../state/routeStore";
 
-/** Mapa con teselas de OpenStreetMap: sin llaves de API ni costo. */
-const OSM_STYLE: maplibregl.StyleSpecification = {
+/**
+ * Mapa base con Esri World Street Map: calles muy detalladas y actualizadas
+ * (datos comerciales), sin API key. Sustituye a las teselas de OSM, que pueden
+ * no mostrar calles recientes o locales. El ruteo sigue por OSRM (datos OSM).
+ * Esri exige su atribución.
+ */
+const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    osm: {
+    basemap: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+      ],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      maxzoom: 19,
+      attribution:
+        "Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
     },
   },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
+  layers: [{ id: "basemap", type: "raster", source: "basemap" }],
 };
 
 export default function MapView() {
@@ -30,7 +39,7 @@ export default function MapView() {
     if (!container.current) return;
     const map = new maplibregl.Map({
       container: container.current,
-      style: OSM_STYLE,
+      style: MAP_STYLE,
       center: [-74.08, 4.6],
       zoom: 11,
       attributionControl: { compact: true },

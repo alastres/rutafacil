@@ -21,7 +21,7 @@ ubicación — menos combustible, menos tiempo.
 | UI | React 18 + Motion (animaciones) | ecosistema, migración directa a Expo si hace falta |
 | Estado | Zustand + persist (localStorage) | mínimo, sin backend |
 | PWA | vite-plugin-pwa (`share_target` en el manifest) | la app aparece en el menú Compartir de Android |
-| Mapa | MapLibre GL + teselas OSM | $0, sin llaves de API |
+| Mapa | MapLibre GL + teselas Esri World Street Map | $0, sin llaves de API |
 | Tests | Vitest (parser y optimizador) | el motor es lo crítico |
 
 **Costo de operación: $0.** Todo corre en el dispositivo; el hosting estático entra
