@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { toast, Toaster } from "react-hot-toast";
 import { parseAllLocations, parseSharedText } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
 import { useRouteStore } from "./state/routeStore";
@@ -11,21 +11,17 @@ import { OptimizeBar } from "./components/OptimizeBar";
 
 const MapView = lazy(() => import("./components/MapView"));
 
-export interface Toast {
-  text: string;
-  error?: boolean;
-}
-
 export default function App() {
   const stops = useRouteStore((s) => s.stops);
   const addStop = useRouteStore((s) => s.addStop);
-  const [toast, setToast] = useState<Toast | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [moving, setMoving] = useState(false);
 
   const notify = useCallback((text: string, error = false) => {
-    setToast({ text, error });
-    window.setTimeout(() => setToast(null), 4000);
+    toast(text, {
+      icon: error ? "⚠️" : "✓",
+      className: error ? "rht rht--error" : "rht",
+    });
   }, []);
 
   /**
@@ -113,20 +109,24 @@ export default function App() {
         showMap={showMap}
         onToggleMap={() => setShowMap((v) => !v)}
       />
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            className={`toast${toast.error ? " is-error" : ""}`}
-            role="status"
-            initial={{ opacity: 0, y: -24, x: "-50%" }}
-            animate={{ opacity: 1, y: 0, x: "-50%" }}
-            exit={{ opacity: 0, y: -24, x: "-50%" }}
-            transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          >
-            {toast.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Toaster
+        position="bottom-center"
+        containerStyle={{ bottom: 92, left: 0, right: 0 }}
+        toastOptions={{
+          duration: 4000,
+          className: "rht",
+          style: {
+            background: "var(--asfalto)",
+            color: "var(--pintura-blanca)",
+            borderLeft: "6px solid var(--pintura)",
+            borderRadius: "var(--radius)",
+            fontFamily: "var(--font-body)",
+            fontSize: "0.92rem",
+            maxWidth: "432px",
+            boxShadow: "0 10px 30px rgba(33, 30, 26, 0.35)",
+          },
+        }}
+      />
     </>
   );
 }

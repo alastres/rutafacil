@@ -519,25 +519,56 @@ input {
   font-size: 0.65rem;
 }
 
-/* ============ Avisos ============ */
-.toast {
-  position: fixed;
-  top: 70px;
-  left: 50%;
-  z-index: 40;
-  width: calc(100% - 48px);
-  max-width: 432px;
-  background: var(--asfalto);
-  color: var(--pintura-blanca);
-  border-left: 6px solid var(--pintura);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  font-size: 0.92rem;
-  box-shadow: 0 10px 30px rgba(33, 30, 26, 0.35);
+/* ============ Avisos (react-hot-toast) ============ */
+.rht--error {
+  border-left-color: var(--cono) !important;
 }
 
-.toast.is-error {
-  border-left-color: var(--cono);
+/* Modal de confirmación tipo cartel de obra */
+.confirm-toast {
+  background: var(--asfalto) !important;
+  color: var(--pintura-blanca);
+  border: 3px solid var(--asfalto) !important;
+  border-radius: 10px !important;
+  box-shadow: 8px 8px 0 var(--asfalto) !important;
+  padding: 0 !important;
+  max-width: 432px !important;
+}
+
+.confirm-modal {
+  padding: 18px;
+  text-align: center;
+}
+
+.confirm-modal__text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  margin: 0 0 16px;
+}
+
+.confirm-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-modal__actions .btn {
+  flex: 1;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.btn--danger {
+  background: var(--cono);
+  color: var(--pintura-blanca);
+  border-color: var(--cono);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--pintura-blanca);
+  border-color: var(--asfalto-claro);
 }
 
 /* ============ Movimiento reducido ============ */

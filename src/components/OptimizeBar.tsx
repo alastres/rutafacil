@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
@@ -111,9 +112,34 @@ export function OptimizeBar({
   };
 
   const handleClear = () => {
-    if (window.confirm("¿Borrar todas las paradas y empezar una ruta nueva?")) {
-      clearRoute();
-    }
+    toast(
+      (t) => (
+        <div className="confirm-modal" role="alertdialog" aria-label="Borrar ruta">
+          <p className="confirm-modal__text">
+            ¿Borrar todas las paradas y empezar una ruta nueva?
+          </p>
+          <div className="confirm-modal__actions">
+            <button
+              className="btn btn--danger"
+              onClick={() => {
+                toast.dismiss(t.id);
+                clearRoute();
+                toast.success("Ruta nueva iniciada");
+              }}
+            >
+              Borrar todo
+            </button>
+            <button
+              className="btn btn--ghost"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity, className: "confirm-toast" },
+    );
   };
 
   if (stops.length === 0) return null;
