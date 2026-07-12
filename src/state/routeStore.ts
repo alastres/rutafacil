@@ -5,6 +5,7 @@ import { haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import type { TransportMode } from "../lib/routing";
+import { withLoader } from "./loadingStore";
 
 export interface Stop {
   id: string;
@@ -152,7 +153,9 @@ export const useRouteStore = create<RouteState>()(
         // Si ya había ruta optimizada, la recalcula para el nuevo vehículo
         if (!origin || pending.length < 1) return;
 
-        const trip = await tripThroughStreets(origin, pending, { mode });
+        const trip = await withLoader(() =>
+          tripThroughStreets(origin, pending, { mode }),
+        );
         if (trip) {
           const ordered = trip.order.map((i, idx) => ({
             ...pending[i],

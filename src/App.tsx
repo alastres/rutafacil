@@ -3,6 +3,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { parseAllLocations, parseSharedText } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
 import { useRouteStore } from "./state/routeStore";
+import { withLoader } from "./state/loadingStore";
 import { Header } from "./components/Header";
 import { AddStop } from "./components/AddStop";
 import { EmptyState } from "./components/EmptyState";
@@ -11,6 +12,7 @@ import { OptimizeBar } from "./components/OptimizeBar";
 import { LiveTracker } from "./components/LiveTracker";
 import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { GlobalLoader } from "./components/GlobalLoader";
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -43,7 +45,9 @@ export default function App() {
 
       let unresolved = 0;
       if (shortLinks.length > 0) {
-        const finals = await Promise.all(shortLinks.map(resolveShortLink));
+        const finals = await withLoader(() =>
+          Promise.all(shortLinks.map(resolveShortLink)),
+        );
         for (const finalUrl of finals) {
           const r = finalUrl ? parseSharedText(finalUrl) : { kind: "none" as const };
           if (r.kind === "ok") locations.push({ lat: r.lat, lng: r.lng, label: r.label });
@@ -94,6 +98,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <GlobalLoader />
       <Header />
       <ModeSelector />
       <AddStop onSubmit={ingest} onNotify={notify} />

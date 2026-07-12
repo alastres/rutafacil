@@ -4,6 +4,7 @@ import { haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
+import { withLoader } from "../state/loadingStore";
 
 function getPosition(): Promise<LatLng> {
   return new Promise((resolve, reject) => {
@@ -58,6 +59,7 @@ export function OptimizeBar({
     onMoving(true);
     const version = beginRouteRequest();
     try {
+      await withLoader(async () => {
       let origin: LatLng | null = null;
       try {
         origin = await getPosition();
@@ -117,6 +119,7 @@ export function OptimizeBar({
           true,
         );
       }
+      });
     } finally {
       setBusy(false);
       // La línea de la carretera sigue "fluyendo" un momento tras reordenar

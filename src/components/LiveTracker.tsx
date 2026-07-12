@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { useRouteStore, type Stop } from "../state/routeStore";
+import { withLoader } from "../state/loadingStore";
 import { tripThroughStreets } from "../lib/routing";
 import { distanceToPolylineKm, type LatLng } from "../lib/geo";
 
@@ -87,7 +88,7 @@ export function LiveTracker() {
 async function reroute(pending: Stop[], from: LatLng) {
   const { mode } = useRouteStore.getState();
   const version = useRouteStore.getState().beginRouteRequest();
-  const trip = await tripThroughStreets(from, pending, { mode });
+  const trip = await withLoader(() => tripThroughStreets(from, pending, { mode }));
   if (!trip) return;
   const ordered = trip.order.map((i, idx) => ({
     ...pending[i],

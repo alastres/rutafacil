@@ -619,6 +619,50 @@ input {
   font-size: 0.65rem;
 }
 
+/* ============ Loader global ============ */
+.global-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 50;
+  background: var(--asfalto);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.global-loader.is-active {
+  opacity: 1;
+}
+
+.global-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--pintura) 0 14px,
+    transparent 14px 28px
+  );
+}
+
+.global-loader.is-active::after {
+  animation: loader-sweep 1.1s linear infinite;
+}
+
+@keyframes loader-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+
 /* ============ Avisos (react-hot-toast) ============ */
 .rht--error {
   border-left-color: var(--cono) !important;
@@ -675,6 +719,11 @@ input {
 @media (prefers-reduced-motion: reduce) {
   .road-list::after {
     animation: none;
+  }
+
+  .global-loader.is-active::after {
+    animation: none;
+    width: 100%;
   }
 
   * {
