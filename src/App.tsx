@@ -97,7 +97,7 @@ export default function App() {
     <>
       <Header />
       <AddStop onSubmit={ingest} onNotify={notify} />
-      {showMap && (
+      {showMap && stops.length > 0 && (
         <Suspense fallback={<div className="map-wrap" />}>
           <MapView />
         </Suspense>
