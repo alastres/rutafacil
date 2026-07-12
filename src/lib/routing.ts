@@ -19,18 +19,49 @@ import { optimizeOrder } from "./tsp";
  * ruteo usa Mapbox Directions con tráfico en vivo (duration incluye congestión
  * actual). Las incidencias (opcional) se obtienen con VITE_TOMTOM_KEY.
  */
-const DEFAULT_BASES = [
-  "https://routing.openstreetmap.de/routed-car", // GIScience: más estable que el demo
-  "https://router.project-osrm.org", // demo oficial de OSRM
-];
-
 const envBase = (import.meta.env.VITE_OSRM_BASE as string | undefined)?.trim();
-const OSRM_BASES: string[] = envBase ? [envBase, ...DEFAULT_BASES] : DEFAULT_BASES;
 
 const ROUTING_PROVIDER: "osrm" | "mapbox" =
   (import.meta.env.VITE_ROUTING_PROVIDER as "osrm" | "mapbox") || "osrm";
 const MAPBOX_KEY = import.meta.env.VITE_MAPBOX_KEY as string | undefined;
 const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
+
+/** Modo de transporte usado para calcular la ruta. */
+export type TransportMode = "car" | "motorbike" | "bike" | "foot";
+
+/** Perfil OSRM equivalente a cada modo. */
+const OSRM_PROFILE: Record<TransportMode, string> = {
+  car: "driving",
+  motorbike: "driving",
+  bike: "bicycle",
+  foot: "foot",
+};
+
+/** Perfil de Mapbox Directions equivalente a cada modo. */
+const MAPBOX_PROFILE: Record<TransportMode, string> = {
+  car: "driving",
+  motorbike: "driving",
+  bike: "cycling",
+  foot: "walking",
+};
+
+/** Subdominio GIScience por modo (routed-car / routed-bicycle / routed-foot). */
+const GIS_SUBDOMAIN: Record<TransportMode, string> = {
+  car: "routed-car",
+  motorbike: "routed-car",
+  bike: "routed-bicycle",
+  foot: "routed-foot",
+};
+
+/**
+ * Servidores OSRM por perfil. El demo (router.project-osrm.org) soporta todos
+ * los perfiles en el mismo endpoint; GIScience tiene subdominios por modo.
+ */
+function osrmBasesFor(mode: TransportMode): string[] {
+  const gis = `https://routing.openstreetmap.de/${GIS_SUBDOMAIN[mode]}`;
+  const bases = [gis, "https://router.project-osrm.org"];
+  return envBase ? [envBase, ...bases] : bases;
+}
 
 export interface TripResult {
   /** Índices de `stops` en el orden de visita recomendado */
@@ -74,10 +105,11 @@ async function tryBase(
   origin: LatLng,
   stops: LatLng[],
   timeoutMs: number,
+  profile: string,
 ): Promise<TripResult | null> {
   const coords = [origin, ...stops].map((p) => `${p.lng},${p.lat}`).join(";");
   const url =
-    `${base}/trip/v1/driving/${coords}` +
+    `${base}/trip/v1/${profile}/${coords}` +
     `?roundtrip=false&source=first&geometries=geojson&overview=full`;
 
   const ctrl = new AbortController();
@@ -127,13 +159,14 @@ async function tripMapbox(
   origin: LatLng,
   stops: LatLng[],
   timeoutMs: number,
+  profile: string,
 ): Promise<TripResult | null> {
   if (!MAPBOX_KEY) return null;
   const order = optimizeOrder(origin, stops);
   const sequence = [origin, ...order.map((i) => stops[i])];
   const coords = sequence.map((p) => `${p.lng},${p.lat}`).join(";");
   const url =
-    `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}` +
+    `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}` +
     `?access_token=${MAPBOX_KEY}&geometries=geojson&overview=full&annotations=congestion,traffic`;
 
   const ctrl = new AbortController();
@@ -164,18 +197,21 @@ async function tripMapbox(
 export async function tripThroughStreets(
   origin: LatLng,
   stops: LatLng[],
-  timeoutMs = 12000,
+  opts: { timeoutMs?: number; mode?: TransportMode } = {},
 ): Promise<TripResult | null> {
+  const { timeoutMs = 12000, mode = "car" } = opts;
   if (stops.length === 0) return null;
 
+  const profile = OSRM_PROFILE[mode];
+
   if (ROUTING_PROVIDER === "mapbox") {
-    const viaMapbox = await tripMapbox(origin, stops, timeoutMs);
+    const viaMapbox = await tripMapbox(origin, stops, timeoutMs, MAPBOX_PROFILE[mode]);
     if (viaMapbox) return viaMapbox;
     // Sin llave válida o fallo → cae a OSRM gratis
   }
 
-  for (const base of OSRM_BASES) {
-    const result = await tryBase(base, origin, stops, timeoutMs);
+  for (const base of osrmBasesFor(mode)) {
+    const result = await tryBase(base, origin, stops, timeoutMs, profile);
     if (result) return result;
   }
   return null;

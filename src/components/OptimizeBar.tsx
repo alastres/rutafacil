@@ -44,6 +44,7 @@ export function OptimizeBar({
   const applyOptimization = useRouteStore((s) => s.applyOptimization);
   const clearRoute = useRouteStore((s) => s.clearRoute);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const mode = useRouteStore((s) => s.mode);
   const tracking = useRouteStore((s) => s.tracking);
   const startTracking = useRouteStore((s) => s.startTracking);
   const stopTracking = useRouteStore((s) => s.stopTracking);
@@ -69,7 +70,7 @@ export function OptimizeBar({
       const effectiveOrigin = origin ?? pending[0];
 
       // Primero por calles reales (OSRM); si no hay conexión, línea recta
-      const trip = await tripThroughStreets(effectiveOrigin, pending);
+      const trip = await tripThroughStreets(effectiveOrigin, pending, { mode });
       if (trip) {
         const ordered: Stop[] = trip.order.map((stopIdx, i) => ({
           ...pending[stopIdx],

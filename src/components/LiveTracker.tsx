@@ -32,8 +32,20 @@ export function LiveTracker() {
     }
 
     let rerouting = false;
+    let gotFix = false;
+    // Avisa si pasa un rato sin ninguna posición (p. ej. permiso de GPS pendiente)
+    const noFixTimer = window.setTimeout(() => {
+      if (!gotFix) {
+        notifyError(
+          "No se recibe tu ubicación. Revisa el permiso de GPS y que la app esté en HTTPS.",
+        );
+      }
+    }, 10000);
+
     const id = navigator.geolocation.watchPosition(
       (pos) => {
+        gotFix = true;
+        window.clearTimeout(noFixTimer);
         const p: LatLng = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
@@ -56,20 +68,25 @@ export function LiveTracker() {
         }
       },
       (err) => {
+        window.clearTimeout(noFixTimer);
         notifyError(`No puedo seguir tu ubicación: ${err.message}`);
         useRouteStore.getState().stopTracking();
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
     );
 
-    return () => navigator.geolocation.clearWatch(id);
+    return () => {
+      window.clearTimeout(noFixTimer);
+      navigator.geolocation.clearWatch(id);
+    };
   }, [tracking]);
 
   return null;
 }
 
 async function reroute(pending: Stop[], from: LatLng) {
-  const trip = await tripThroughStreets(from, pending);
+  const { mode } = useRouteStore.getState();
+  const trip = await tripThroughStreets(from, pending, { mode });
   if (!trip) return;
   const ordered = trip.order.map((i, idx) => ({
     ...pending[i],

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { LatLng } from "../lib/geo";
+import { tripThroughStreets } from "../lib/routing";
+import type { TransportMode } from "../lib/routing";
 
 export interface Stop {
   id: string;
@@ -32,6 +34,8 @@ interface RouteState {
   byStreets: boolean;
   origin: LatLng | null;
   geometry: [number, number][] | null;
+  /** Modo de transporte usado para calcular la ruta */
+  mode: TransportMode;
   /** Posición GPS en vivo del usuario mientras se sigue la ruta */
   live: LatLng | null;
   /** true = geolocalización observando en vivo */
@@ -45,6 +49,7 @@ interface RouteState {
   setLive: (pos: LatLng | null) => void;
   startTracking: () => void;
   stopTracking: () => void;
+  setMode: (mode: TransportMode) => void;
 }
 
 let counter = 0;
@@ -66,6 +71,7 @@ export const useRouteStore = create<RouteState>()(
       byStreets: false,
       origin: null,
       geometry: null,
+      mode: "car",
       live: null,
       tracking: false,
 
@@ -118,6 +124,30 @@ export const useRouteStore = create<RouteState>()(
       startTracking: () => set({ tracking: true, live: null }),
 
       stopTracking: () => set({ tracking: false, live: null }),
+
+      setMode: async (mode) => {
+        const { origin, stops } = get();
+        const pending = stops.filter((s) => !s.delivered);
+        set({ mode, ...invalidated });
+        // Si ya había ruta optimizada, la recalcula para el nuevo vehículo
+        if (origin && pending.length >= 1) {
+          const trip = await tripThroughStreets(origin, pending, { mode });
+          if (trip) {
+            const ordered = trip.order.map((i, idx) => ({
+              ...pending[i],
+              legKm: trip.legsKm[idx],
+            }));
+            set({
+              stops: [...stops.filter((s) => s.delivered), ...ordered],
+              origin,
+              optimizedKm: trip.distanceKm,
+              durationMin: trip.durationMin,
+              geometry: trip.coordinates,
+              byStreets: true,
+            });
+          }
+        }
+      },
 
       applyOptimization: ({ ordered, origin, km, durationMin, geometry, byStreets }) => {
         // Las entregadas quedan al frente (ya pasaste por ahí)

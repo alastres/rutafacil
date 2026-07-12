@@ -9,6 +9,7 @@ import { EmptyState } from "./components/EmptyState";
 import { RoadList } from "./components/RoadList";
 import { OptimizeBar } from "./components/OptimizeBar";
 import { LiveTracker } from "./components/LiveTracker";
+import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const MapView = lazy(() => import("./components/MapView"));
@@ -94,6 +95,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Header />
+      <ModeSelector />
       <AddStop onSubmit={ingest} onNotify={notify} />
       {showMap && stops.length > 0 && (
         <Suspense fallback={<div className="map-wrap" />}>

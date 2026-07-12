@@ -150,52 +150,55 @@ export default function MapView() {
     }
   }, [stops, origin, geometry, byStreets, tracking]);
 
-  // Marcador "TÚ" en vivo + la cámara sigue al usuario mientras se rastrea
+  // Crea/quita el marcador "TÚ" en vivo según el estado de seguimiento.
+  // Solo depende de `tracking` para NO destruirlo en cada fix de GPS.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || map !== mapRef.current) return;
-
-    const placeLiveMarker = (p: { lat: number; lng: number }) => {
-      if (!liveMarkerRef.current) {
-        const el = document.createElement("div");
-        el.className = "map-marker is-origin is-live";
-        el.textContent = "TÚ";
-        liveMarkerRef.current = new maplibregl.Marker({ element: el }).addTo(map);
+    if (tracking) {
+      const el = document.createElement("div");
+      el.className = "map-marker is-origin is-live";
+      el.textContent = "TÚ";
+      const marker = new maplibregl.Marker({ element: el }).addTo(map);
+      // Posición inicial: la última conocida o el origen, para no parpadear en 0,0
+      const seed = live ?? origin;
+      if (seed && Number.isFinite(seed.lng) && Number.isFinite(seed.lat)) {
+        marker.setLngLat([seed.lng, seed.lat]);
       }
-      liveMarkerRef.current.setLngLat([p.lng, p.lat]);
-    };
-
-    if (live && tracking) {
-      try {
-        const pos = live;
-        if (!Number.isFinite(pos.lng) || !Number.isFinite(pos.lat)) return;
-        placeLiveMarker(pos);
-        // Solo mueve la cámara si el usuario se salió del viewport (evita
-        // animaciones constantes y solapadas). Cancela cualquier animación
-        // previa para no disparar "already running".
-        const follow = () => {
-          if (map.isMoving()) return;
-          map.stop();
-          map.easeTo({ center: [pos.lng, pos.lat], duration: 800 });
-        };
-        if (map.loaded()) {
-          const inView = map.getBounds().contains([pos.lng, pos.lat]);
-          if (!inView) follow();
-        } else {
-          map.once("load", follow);
-        }
-      } catch {
-        // Si falla el marcador/seguimiento, no debe romper la app
-      }
+      liveMarkerRef.current = marker;
     } else {
       liveMarkerRef.current?.remove();
       liveMarkerRef.current = null;
     }
-
     return () => {
       liveMarkerRef.current?.remove();
       liveMarkerRef.current = null;
     };
+  }, [tracking]);
+
+  // Mueve el marcador a la posición en vivo y sigue la cámara (solo si el
+  // usuario se sale del viewport, para no pelear con el paneo manual).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || map !== mapRef.current) return;
+    if (!live || !tracking || !liveMarkerRef.current) return;
+    try {
+      const pos = live;
+      if (!Number.isFinite(pos.lng) || !Number.isFinite(pos.lat)) return;
+      liveMarkerRef.current.setLngLat([pos.lng, pos.lat]);
+      const follow = () => {
+        if (map.isMoving()) return;
+        map.stop();
+        map.easeTo({ center: [pos.lng, pos.lat], duration: 800 });
+      };
+      if (map.loaded()) {
+        if (!map.getBounds().contains([pos.lng, pos.lat])) follow();
+      } else {
+        map.once("load", follow);
+      }
+    } catch {
+      // Nunca debe romper la app por un ajuste de seguimiento
+    }
   }, [live, tracking]);
 
   // Incidencias de tráfico (TomTom) — solo si hay llave configurada

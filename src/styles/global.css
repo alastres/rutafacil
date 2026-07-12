@@ -437,6 +437,37 @@ input {
   color: var(--tinta-suave);
 }
 
+/* ============ Selector de modo de transporte ============ */
+.mode-selector {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 9px 6px;
+  background: var(--pavimento);
+  color: var(--asfalto);
+  border: 2px solid var(--asfalto);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.mode-btn.is-active {
+  background: var(--pintura);
+  border-color: var(--asfalto);
+}
+
 /* ============ Barra inferior ============ */
 .bottom-bar {
   position: fixed;
