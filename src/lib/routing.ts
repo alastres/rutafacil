@@ -56,7 +56,7 @@ async function tryBase(
   const coords = [origin, ...stops].map((p) => `${p.lng},${p.lat}`).join(";");
   const url =
     `${base}/trip/v1/driving/${coords}` +
-    `?roundtrip=false&source=first&geometries=geojson&overview=simplified`;
+    `?roundtrip=false&source=first&geometries=geojson&overview=full`;
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
