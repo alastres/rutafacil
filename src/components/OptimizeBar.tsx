@@ -42,6 +42,7 @@ export function OptimizeBar({
 }) {
   const stops = useRouteStore((s) => s.stops);
   const applyOptimization = useRouteStore((s) => s.applyOptimization);
+  const beginRouteRequest = useRouteStore((s) => s.beginRouteRequest);
   const clearRoute = useRouteStore((s) => s.clearRoute);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
   const mode = useRouteStore((s) => s.mode);
@@ -55,6 +56,7 @@ export function OptimizeBar({
   const handleOptimize = async () => {
     setBusy(true);
     onMoving(true);
+    const version = beginRouteRequest();
     try {
       let origin: LatLng | null = null;
       try {
@@ -76,14 +78,17 @@ export function OptimizeBar({
           ...pending[stopIdx],
           legKm: trip.legsKm[i],
         }));
-        applyOptimization({
-          ordered,
-          origin: effectiveOrigin,
-          km: trip.distanceKm,
-          durationMin: trip.durationMin,
-          geometry: trip.coordinates,
-          byStreets: true,
-        });
+        applyOptimization(
+          {
+            ordered,
+            origin: effectiveOrigin,
+            km: trip.distanceKm,
+            durationMin: trip.durationMin,
+            geometry: trip.coordinates,
+            byStreets: true,
+          },
+          version,
+        );
         onNotify(
           `Ruta por calles armada: ${trip.distanceKm.toFixed(1)} km, ~${Math.round(trip.durationMin)} min ${origin ? "desde tu ubicación" : "desde la primera parada"} ✓`,
         );
@@ -96,14 +101,17 @@ export function OptimizeBar({
           return stop;
         });
         const km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
-        applyOptimization({
-          ordered,
-          origin: effectiveOrigin,
-          km,
-          durationMin: null,
-          geometry: null,
-          byStreets: false,
-        });
+        applyOptimization(
+          {
+            ordered,
+            origin: effectiveOrigin,
+            km,
+            durationMin: null,
+            geometry: null,
+            byStreets: false,
+          },
+          version,
+        );
         onNotify(
           "Sin conexión al servicio de rutas: orden calculado en línea recta. Vuelve a tocar Armar ruta cuando tengas señal.",
           true,

@@ -49,7 +49,7 @@ const MAPBOX_PROFILE: Record<TransportMode, string> = {
 const GIS_SUBDOMAIN: Record<TransportMode, string> = {
   car: "routed-car",
   motorbike: "routed-car",
-  bike: "routed-bicycle",
+  bike: "routed-bike",
   foot: "routed-foot",
 };
 

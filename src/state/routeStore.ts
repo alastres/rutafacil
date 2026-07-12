@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { LatLng } from "../lib/geo";
+import { toast } from "react-hot-toast";
+import { haversineKm, type LatLng } from "../lib/geo";
+import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import type { TransportMode } from "../lib/routing";
 
@@ -40,16 +42,32 @@ interface RouteState {
   live: LatLng | null;
   /** true = geolocalización observando en vivo */
   tracking: boolean;
+  /**
+   * Contador de la última solicitud de cálculo de ruta iniciada (Armar ruta,
+   * cambio de vehículo, recálculo automático en vivo). Sirve para descartar
+   * respuestas obsoletas cuando dos cálculos se solapan: la petición A puede
+   * resolver DESPUÉS que la B aunque A se haya iniciado antes, y sin esta
+   * guarda su resultado atrasado pisaba el de B (p. ej. cambiar de "auto" a
+   * "bici" rápido podía dejar en pantalla la ruta de "auto").
+   */
+  routeVersion: number;
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
-  applyOptimization: (result: OptimizationResult) => void;
+  /** Reserva la siguiente versión antes de iniciar un cálculo de ruta. */
+  beginRouteRequest: () => number;
+  /**
+   * Aplica un resultado de optimización. Si se pasa `version` y ya no
+   * coincide con la más reciente (`routeVersion`), el resultado se descarta
+   * en silencio: llegó tarde y una solicitud posterior ya ganó.
+   */
+  applyOptimization: (result: OptimizationResult, version?: number) => void;
   setLive: (pos: LatLng | null) => void;
   startTracking: () => void;
   stopTracking: () => void;
-  setMode: (mode: TransportMode) => void;
+  setMode: (mode: TransportMode) => Promise<void>;
 }
 
 let counter = 0;
@@ -74,6 +92,7 @@ export const useRouteStore = create<RouteState>()(
       mode: "car",
       live: null,
       tracking: false,
+      routeVersion: 0,
 
       addStop: (lat, lng, label) =>
         set((s) => ({
@@ -128,28 +147,66 @@ export const useRouteStore = create<RouteState>()(
       setMode: async (mode) => {
         const { origin, stops } = get();
         const pending = stops.filter((s) => !s.delivered);
+        const version = get().beginRouteRequest();
         set({ mode, ...invalidated });
         // Si ya había ruta optimizada, la recalcula para el nuevo vehículo
-        if (origin && pending.length >= 1) {
-          const trip = await tripThroughStreets(origin, pending, { mode });
-          if (trip) {
-            const ordered = trip.order.map((i, idx) => ({
-              ...pending[i],
-              legKm: trip.legsKm[idx],
-            }));
-            set({
-              stops: [...stops.filter((s) => s.delivered), ...ordered],
+        if (!origin || pending.length < 1) return;
+
+        const trip = await tripThroughStreets(origin, pending, { mode });
+        if (trip) {
+          const ordered = trip.order.map((i, idx) => ({
+            ...pending[i],
+            legKm: trip.legsKm[idx],
+          }));
+          get().applyOptimization(
+            {
+              ordered,
               origin,
-              optimizedKm: trip.distanceKm,
+              km: trip.distanceKm,
               durationMin: trip.durationMin,
               geometry: trip.coordinates,
               byStreets: true,
-            });
-          }
+            },
+            version,
+          );
+          return;
         }
+
+        // El servicio de rutas falló para este vehículo (servidor caído,
+        // perfil no disponible, sin conexión): respaldo en línea recta en
+        // vez de dejar la app sin ruta actualizada.
+        if (version !== get().routeVersion) return; // ya hay algo más reciente
+        const order = optimizeOrder(origin, pending);
+        let prev: LatLng = origin;
+        const ordered = order.map((i) => {
+          const stop = { ...pending[i], legKm: haversineKm(prev, pending[i]) };
+          prev = stop;
+          return stop;
+        });
+        const km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        get().applyOptimization(
+          { ordered, origin, km, durationMin: null, geometry: null, byStreets: false },
+          version,
+        );
+        toast(
+          "Sin conexión al servicio de rutas para este vehículo: orden calculado en línea recta.",
+          { icon: "⚠️", className: "rht rht--error" },
+        );
       },
 
-      applyOptimization: ({ ordered, origin, km, durationMin, geometry, byStreets }) => {
+      beginRouteRequest: () => {
+        const version = get().routeVersion + 1;
+        set({ routeVersion: version });
+        return version;
+      },
+
+      applyOptimization: (
+        { ordered, origin, km, durationMin, geometry, byStreets },
+        version,
+      ) => {
+        // Resultado de una solicitud ya superada por otra más reciente: se
+        // descarta para no pisar el cálculo vigente con uno atrasado.
+        if (version !== undefined && version !== get().routeVersion) return;
         // Las entregadas quedan al frente (ya pasaste por ahí)
         const done = get().stops.filter((s) => s.delivered);
         set({

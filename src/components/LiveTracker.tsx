@@ -86,19 +86,23 @@ export function LiveTracker() {
 
 async function reroute(pending: Stop[], from: LatLng) {
   const { mode } = useRouteStore.getState();
+  const version = useRouteStore.getState().beginRouteRequest();
   const trip = await tripThroughStreets(from, pending, { mode });
   if (!trip) return;
   const ordered = trip.order.map((i, idx) => ({
     ...pending[i],
     legKm: trip.legsKm[idx],
   }));
-  useRouteStore.getState().applyOptimization({
-    ordered,
-    origin: from,
-    km: trip.distanceKm,
-    durationMin: trip.durationMin,
-    geometry: trip.coordinates,
-    byStreets: true,
-  });
+  useRouteStore.getState().applyOptimization(
+    {
+      ordered,
+      origin: from,
+      km: trip.distanceKm,
+      durationMin: trip.durationMin,
+      geometry: trip.coordinates,
+      byStreets: true,
+    },
+    version,
+  );
   toast("Ruta recalculada desde tu posición ✓", { icon: "✓", className: "rht" });
 }
