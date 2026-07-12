@@ -156,16 +156,21 @@ export default function MapView() {
     const map = mapRef.current;
     if (!map || map !== mapRef.current) return;
     if (tracking) {
-      const el = document.createElement("div");
-      el.className = "map-marker is-origin is-live";
-      el.textContent = "TÚ";
-      const marker = new maplibregl.Marker({ element: el }).addTo(map);
-      // Posición inicial: la última conocida o el origen, para no parpadear en 0,0
+      // Posición inicial: la última conocida o el origen, para no parpadear en 0,0.
+      // MapLibre exige una LngLat válida ANTES de addTo(): si se llama sin
+      // setLngLat previo, Marker._update() lee lngLat.lng de undefined y
+      // lanza — eso tumbaba el mapa entero en cuanto se activaba "Seguir".
       const seed = live ?? origin;
-      if (seed && Number.isFinite(seed.lng) && Number.isFinite(seed.lat)) {
-        marker.setLngLat([seed.lng, seed.lat]);
+      if (!seed || !Number.isFinite(seed.lng) || !Number.isFinite(seed.lat)) {
+        liveMarkerRef.current = null;
+      } else {
+        const el = document.createElement("div");
+        el.className = "map-marker is-origin is-live";
+        el.textContent = "TÚ";
+        liveMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([seed.lng, seed.lat])
+          .addTo(map);
       }
-      liveMarkerRef.current = marker;
     } else {
       liveMarkerRef.current?.remove();
       liveMarkerRef.current = null;
@@ -181,10 +186,20 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || map !== mapRef.current) return;
-    if (!live || !tracking || !liveMarkerRef.current) return;
+    if (!live || !tracking) return;
+    if (!Number.isFinite(live.lng) || !Number.isFinite(live.lat)) return;
     try {
       const pos = live;
-      if (!Number.isFinite(pos.lng) || !Number.isFinite(pos.lat)) return;
+      // Respaldo: si el marcador no se creó al activar el seguimiento
+      // (p. ej. sin origen todavía), créalo en cuanto llegue el primer fix.
+      if (!liveMarkerRef.current) {
+        const el = document.createElement("div");
+        el.className = "map-marker is-origin is-live";
+        el.textContent = "TÚ";
+        liveMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([pos.lng, pos.lat])
+          .addTo(map);
+      }
       liveMarkerRef.current.setLngLat([pos.lng, pos.lat]);
       const follow = () => {
         if (map.isMoving()) return;
