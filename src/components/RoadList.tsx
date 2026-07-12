@@ -1,35 +1,35 @@
 import { AnimatePresence, motion } from "motion/react";
-import { haversineKm, type LatLng } from "../lib/geo";
 import { googleMapsNavUrl } from "../lib/nav";
 import { useRouteStore, type Stop } from "../state/routeStore";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const byStreets = useRouteStore((s) => s.byStreets);
   const origin = useRouteStore((s) => s.origin);
+  const optimized = optimizedKm !== null;
   const nextId = stops.find((s) => !s.delivered)?.id;
-
-  // Distancia desde el punto anterior (solo tiene sentido tras optimizar)
-  const legKm = new Map<string, number>();
-  if (optimizedKm !== null && origin) {
-    let prev: LatLng = origin;
-    for (const stop of stops) {
-      if (stop.delivered) continue;
-      legKm.set(stop.id, haversineKm(prev, stop));
-      prev = stop;
-    }
-  }
 
   return (
     <ol className={`road-list${moving ? " is-moving" : ""}`}>
+      {optimized && origin && (
+        <li className="road-item road-origin" aria-label="Punto de partida">
+          <span className="marker marker-origin" aria-hidden="true">
+            TÚ
+          </span>
+          <div className="origin-chip">
+            Punto de partida · {byStreets ? "ruta por calles" : "línea recta"}
+          </div>
+        </li>
+      )}
       <AnimatePresence initial={false}>
         {stops.map((stop, i) => (
           <StopItem
             key={stop.id}
             stop={stop}
             position={i + 1}
-            isNext={stop.id === nextId && optimizedKm !== null}
-            legKm={legKm.get(stop.id)}
+            isNext={stop.id === nextId && optimized}
+            legKm={optimized ? stop.legKm : undefined}
           />
         ))}
       </AnimatePresence>
@@ -75,7 +75,9 @@ function StopItem({
       <article className="stop-card">
         <div className="stop-eyebrow">
           {isNext ? <strong>Siguiente</strong> : <span>Parada {position}</span>}
-          {legKm !== undefined && <span>+{legKm.toFixed(1)} km</span>}
+          {legKm !== undefined && !stop.delivered && (
+            <span>+{legKm.toFixed(1)} km</span>
+          )}
         </div>
         <div className="stop-row">
           <input

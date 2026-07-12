@@ -234,6 +234,28 @@ input {
   color: var(--pintura-blanca);
 }
 
+/* punto de partida: tu ubicación */
+.road-origin {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.marker-origin {
+  background: var(--pintura-blanca);
+  border-color: var(--pintura);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.origin-chip {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
 /* ============ Tarjeta de parada: señal pintada ============ */
 .stop-card {
   background: var(--pintura-blanca);
@@ -489,6 +511,12 @@ input {
 .map-marker.is-delivered {
   background: var(--senal-verde);
   color: var(--pintura-blanca);
+}
+
+.map-marker.is-origin {
+  background: var(--pintura-blanca);
+  border-color: var(--pintura);
+  font-size: 0.65rem;
 }
 
 /* ============ Avisos ============ */

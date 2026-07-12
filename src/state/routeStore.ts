@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { LatLng } from "../lib/geo";
-import { optimizeOrder, pathLengthKm } from "../lib/tsp";
 
 export interface Stop {
   id: string;
@@ -10,30 +9,56 @@ export interface Stop {
   label: string;
   delivered: boolean;
   createdAt: number;
+  /** Km del tramo que llega a esta parada (por calles si byStreets) */
+  legKm?: number;
+}
+
+export interface OptimizationResult {
+  /** Paradas pendientes en el orden de visita, con legKm calculado */
+  ordered: Stop[];
+  origin: LatLng;
+  km: number;
+  durationMin: number | null;
+  /** Geometría de la ruta por calles [lng, lat], o null si es línea recta */
+  geometry: [number, number][] | null;
+  byStreets: boolean;
 }
 
 interface RouteState {
   stops: Stop[];
   /** null = la ruta aún no se ha optimizado desde la última modificación */
   optimizedKm: number | null;
+  durationMin: number | null;
+  byStreets: boolean;
   origin: LatLng | null;
+  geometry: [number, number][] | null;
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
-  optimize: (origin: LatLng) => void;
+  applyOptimization: (result: OptimizationResult) => void;
 }
 
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
+
+/** Una modificación de paradas invalida la optimización vigente */
+const invalidated = {
+  optimizedKm: null,
+  durationMin: null,
+  geometry: null,
+} as const;
 
 export const useRouteStore = create<RouteState>()(
   persist(
     (set, get) => ({
       stops: [],
       optimizedKm: null,
+      durationMin: null,
+      byStreets: false,
       origin: null,
+      geometry: null,
 
       addStop: (lat, lng, label) =>
         set((s) => ({
@@ -48,13 +73,13 @@ export const useRouteStore = create<RouteState>()(
               createdAt: Date.now(),
             },
           ],
-          optimizedKm: null,
+          ...invalidated,
         })),
 
       removeStop: (id) =>
         set((s) => ({
           stops: s.stops.filter((st) => st.id !== id),
-          optimizedKm: null,
+          ...invalidated,
         })),
 
       renameStop: (id, label) =>
@@ -69,19 +94,19 @@ export const useRouteStore = create<RouteState>()(
           ),
         })),
 
-      clearRoute: () => set({ stops: [], optimizedKm: null, origin: null }),
+      clearRoute: () =>
+        set({ stops: [], origin: null, byStreets: false, ...invalidated }),
 
-      optimize: (origin) => {
-        const { stops } = get();
-        // Las entregadas quedan al frente (ya pasaste); se optimiza el resto
-        const pending = stops.filter((s) => !s.delivered);
-        const done = stops.filter((s) => s.delivered);
-        const order = optimizeOrder(origin, pending);
-        const ordered = order.map((i) => pending[i]);
+      applyOptimization: ({ ordered, origin, km, durationMin, geometry, byStreets }) => {
+        // Las entregadas quedan al frente (ya pasaste por ahí)
+        const done = get().stops.filter((s) => s.delivered);
         set({
           stops: [...done, ...ordered],
           origin,
-          optimizedKm: pathLengthKm(origin, ordered),
+          optimizedKm: km,
+          durationMin,
+          geometry,
+          byStreets,
         });
       },
     }),

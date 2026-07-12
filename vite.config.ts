@@ -5,12 +5,14 @@ import { VitePWA, type ManifestOptions } from "vite-plugin-pwa";
 // share_target: al instalarse, la PWA aparece en el menú Compartir de Android.
 // En Android el enlace compartido llega en el parámetro `text` (no en `url`).
 const manifest: Partial<ManifestOptions> = {
+  id: "/",
   name: "RutaFácil",
   short_name: "RutaFácil",
   description:
     "Comparte ubicaciones desde WhatsApp y arma la ruta de entregas más corta.",
   lang: "es",
   start_url: "/",
+  scope: "/",
   display: "standalone",
   orientation: "portrait",
   background_color: "#E9E7E2",

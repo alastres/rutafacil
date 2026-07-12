@@ -3,6 +3,7 @@ import { useRouteStore } from "../state/routeStore";
 export function Header() {
   const stops = useRouteStore((s) => s.stops);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const durationMin = useRouteStore((s) => s.durationMin);
   const pending = stops.filter((s) => !s.delivered).length;
   const delivered = stops.length - pending;
 
@@ -18,6 +19,7 @@ export function Header() {
         </span>
         {delivered > 0 && <span>{delivered} entregadas</span>}
         {optimizedKm !== null && <span>{optimizedKm.toFixed(1)} km</span>}
+        {durationMin !== null && <span>~{Math.round(durationMin)} min</span>}
       </div>
     </header>
   );
