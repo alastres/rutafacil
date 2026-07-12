@@ -66,3 +66,66 @@ export function parseSharedText(raw: string): ParseResult {
 
   return { kind: "none" };
 }
+
+export interface FoundLocation {
+  lat: number;
+  lng: number;
+  label?: string;
+}
+
+export interface BulkParseResult {
+  locations: FoundLocation[];
+  shortLinks: string[];
+}
+
+/**
+ * Extrae TODAS las ubicaciones de un texto (p. ej. una conversación entera
+ * de WhatsApp copiada y pegada). Cada URL aporta a lo sumo una ubicación;
+ * las coordenadas sueltas del texto restante también cuentan. Los enlaces
+ * acortados se devuelven aparte para resolverlos vía /api/resolve.
+ */
+export function parseAllLocations(raw: string): BulkParseResult {
+  const text = raw.trim();
+  const shortLinks: string[] = [];
+  const found: Array<FoundLocation & { index: number }> = [];
+
+  // URLs y URIs geo: — cada una se interpreta individualmente
+  const urlRe = /(?:https?:\/\/\S+|geo:\S+)/gi;
+  // El texto restante se enmascara con espacios (mismo largo) para que los
+  // índices de las coordenadas sueltas sigan siendo los del texto original
+  let masked = text;
+  for (const m of text.matchAll(urlRe)) {
+    const index = m.index ?? 0;
+    masked =
+      masked.slice(0, index) +
+      " ".repeat(m[0].length) +
+      masked.slice(index + m[0].length);
+    const r = parseSharedText(m[0]);
+    if (r.kind === "ok") found.push({ lat: r.lat, lng: r.lng, label: r.label, index });
+    else if (r.kind === "short-link") shortLinks.push(r.url);
+  }
+
+  // Coordenadas sueltas en el texto que queda
+  const bare = new RegExp(
+    String.raw`(?:^|\s)${COORD}${SEP}${COORD}(?=$|\s)`,
+    "g",
+  );
+  for (const m of masked.matchAll(bare)) {
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
+    if (isValidLatLng(lat, lng)) found.push({ lat, lng, index: m.index ?? 0 });
+  }
+
+  // Orden del texto original (el orden en que llegaron los pedidos) y sin duplicados
+  found.sort((a, b) => a.index - b.index);
+  const seen = new Set<string>();
+  const locations: FoundLocation[] = [];
+  for (const { lat, lng, label } of found) {
+    const key = `${lat},${lng}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    locations.push({ lat, lng, label });
+  }
+
+  return { locations, shortLinks };
+}

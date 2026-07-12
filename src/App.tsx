@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { parseSharedText } from "./lib/parse";
+import { parseAllLocations, parseSharedText } from "./lib/parse";
+import { resolveShortLink } from "./lib/resolve";
 import { useRouteStore } from "./state/routeStore";
 import { Header } from "./components/Header";
 import { AddStop } from "./components/AddStop";
@@ -27,24 +28,51 @@ export default function App() {
     window.setTimeout(() => setToast(null), 4000);
   }, []);
 
-  /** Procesa texto compartido o pegado; devuelve true si agregó parada. */
+  /**
+   * Procesa texto compartido o pegado — puede traer VARIAS ubicaciones
+   * (una conversación entera de WhatsApp). Los enlaces acortados se
+   * resuelven vía /api/resolve. Devuelve true si agregó alguna parada.
+   */
   const ingest = useCallback(
-    (text: string): boolean => {
-      const result = parseSharedText(text);
-      if (result.kind === "ok") {
-        addStop(result.lat, result.lng, result.label);
-        notify("Parada agregada a la ruta ✓");
-        return true;
+    async (text: string): Promise<boolean> => {
+      if (!text.trim()) {
+        notify("El campo está vacío: pega un enlace de Maps o coordenadas.", true);
+        return false;
       }
-      if (result.kind === "short-link") {
+
+      const { locations, shortLinks } = parseAllLocations(text);
+
+      let unresolved = 0;
+      if (shortLinks.length > 0) {
+        const finals = await Promise.all(shortLinks.map(resolveShortLink));
+        for (const finalUrl of finals) {
+          const r = finalUrl ? parseSharedText(finalUrl) : { kind: "none" as const };
+          if (r.kind === "ok") locations.push({ lat: r.lat, lng: r.lng, label: r.label });
+          else unresolved++;
+        }
+      }
+
+      if (locations.length === 0) {
         notify(
-          "Ese enlace es acortado y no trae coordenadas. Ábrelo en Maps y comparte desde ahí.",
+          unresolved > 0
+            ? "No pude resolver el enlace acortado. Ábrelo en Maps y comparte desde ahí."
+            : "No encontré ninguna ubicación en el texto.",
           true,
         );
         return false;
       }
-      notify("No encontré una ubicación en lo que compartiste.", true);
-      return false;
+
+      for (const loc of locations) addStop(loc.lat, loc.lng, loc.label);
+      const added =
+        locations.length === 1
+          ? "Parada agregada a la ruta ✓"
+          : `${locations.length} paradas agregadas a la ruta ✓`;
+      notify(
+        unresolved > 0
+          ? `${added} (${unresolved} enlace${unresolved > 1 ? "s" : ""} acortado sin resolver)`
+          : added,
+      );
+      return true;
     },
     [addStop, notify],
   );
@@ -58,7 +86,7 @@ export default function App() {
       .join(" ")
       .trim();
     if (shared) {
-      ingest(shared);
+      void ingest(shared);
       window.history.replaceState(null, "", "/");
     }
     // Solo al cargar la app
@@ -68,7 +96,7 @@ export default function App() {
   return (
     <>
       <Header />
-      <AddStop onSubmit={ingest} />
+      <AddStop onSubmit={ingest} onNotify={notify} />
       {showMap && (
         <Suspense fallback={<div className="map-wrap" />}>
           <MapView />
