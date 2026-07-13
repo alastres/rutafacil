@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouteStore } from "../state/routeStore";
 import { fetchIncidents } from "../lib/routing";
+import { CHECK_SVG_MARKUP } from "./icons";
 
 const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
@@ -90,7 +91,8 @@ export default function MapView() {
     markersRef.current = stops.map((stop, i) => {
       const el = document.createElement("div");
       el.className = `map-marker${stop.delivered ? " is-delivered" : ""}`;
-      el.textContent = stop.delivered ? "✓" : String(i + 1);
+      if (stop.delivered) el.innerHTML = CHECK_SVG_MARKUP;
+      else el.textContent = String(i + 1);
       return new maplibregl.Marker({ element: el })
         .setLngLat([stop.lng, stop.lat])
         .addTo(map);

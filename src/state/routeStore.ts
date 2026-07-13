@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "react-hot-toast";
+import { createElement } from "react";
 import { haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import type { TransportMode } from "../lib/routing";
 import { withLoader } from "./loadingStore";
+import { AlertIcon } from "../components/icons";
 
 export interface Stop {
   id: string;
@@ -193,7 +195,10 @@ export const useRouteStore = create<RouteState>()(
         );
         toast(
           "Sin conexión al servicio de rutas para este vehículo: orden calculado en línea recta.",
-          { icon: "⚠️", className: "rht rht--error" },
+          {
+            icon: createElement(AlertIcon, { width: 18, height: 18 }),
+            className: "rht rht--error",
+          },
         );
       },
 

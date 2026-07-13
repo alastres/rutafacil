@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { googleMapsNavUrl } from "../lib/nav";
 import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
+import { CheckIcon, CloseIcon, ArrowRightIcon } from "./icons";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
@@ -89,7 +90,7 @@ function StopItem({
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
     >
       <span className="marker" aria-hidden="true">
-        {stop.delivered ? "✓" : position}
+        {stop.delivered ? <CheckIcon width={16} height={16} /> : position}
       </span>
       <article className="stop-card">
         <div className="stop-eyebrow">
@@ -110,7 +111,7 @@ function StopItem({
             onClick={() => removeStop(stop.id)}
             aria-label={`Quitar ${stop.label}`}
           >
-            ✕
+            <CloseIcon width={14} height={14} />
           </button>
         </div>
         {!stop.delivered && (
@@ -121,13 +122,15 @@ function StopItem({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Navegar ➜
+              Navegar
+              <ArrowRightIcon width={15} height={15} />
             </a>
             <button
               className="btn btn-done"
               onClick={() => toggleDelivered(stop.id)}
             >
-              Entregada ✓
+              Entregada
+              <CheckIcon width={15} height={15} />
             </button>
           </div>
         )}
@@ -141,6 +144,7 @@ function StopItem({
             transition={{ type: "spring", stiffness: 400, damping: 16 }}
             title="Tocar para deshacer"
           >
+            <CheckIcon width={13} height={13} />
             Entregado
           </motion.button>
         )}

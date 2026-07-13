@@ -13,6 +13,7 @@ import { LiveTracker } from "./components/LiveTracker";
 import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalLoader } from "./components/GlobalLoader";
+import { CheckIcon, AlertIcon } from "./components/icons";
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -24,7 +25,7 @@ export default function App() {
 
   const notify = useCallback((text: string, error = false) => {
     toast(text, {
-      icon: error ? "⚠️" : "✓",
+      icon: error ? <AlertIcon width={18} height={18} /> : <CheckIcon width={18} height={18} />,
       className: error ? "rht rht--error" : "rht",
     });
   }, []);
@@ -68,8 +69,8 @@ export default function App() {
       for (const loc of locations) addStop(loc.lat, loc.lng, loc.label);
       const added =
         locations.length === 1
-          ? "Parada agregada a la ruta ✓"
-          : `${locations.length} paradas agregadas a la ruta ✓`;
+          ? "Parada agregada a la ruta"
+          : `${locations.length} paradas agregadas a la ruta`;
       notify(
         unresolved > 0
           ? `${added} (${unresolved} enlace${unresolved > 1 ? "s" : ""} acortado sin resolver)`

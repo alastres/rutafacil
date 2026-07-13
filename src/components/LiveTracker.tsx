@@ -4,6 +4,7 @@ import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
 import { tripThroughStreets } from "../lib/routing";
 import { distanceToPolylineKm, type LatLng } from "../lib/geo";
+import { AlertIcon, CheckIcon } from "./icons";
 
 /** A partir de qué desviación (m) se recalcula la ruta */
 const DEVIATION_M = 60;
@@ -11,7 +12,7 @@ const DEVIATION_M = 60;
 const REROUTE_COOLDOWN_MS = 20000;
 
 function notifyError(text: string) {
-  toast(text, { icon: "⚠️", className: "rht rht--error" });
+  toast(text, { icon: <AlertIcon width={18} height={18} />, className: "rht rht--error" });
 }
 
 /**
@@ -105,5 +106,8 @@ async function reroute(pending: Stop[], from: LatLng) {
     },
     version,
   );
-  toast("Ruta recalculada desde tu posición ✓", { icon: "✓", className: "rht" });
+  toast("Ruta recalculada desde tu posición", {
+    icon: <CheckIcon width={18} height={18} />,
+    className: "rht",
+  });
 }

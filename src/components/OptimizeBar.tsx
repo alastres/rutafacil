@@ -5,6 +5,7 @@ import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
+import { CheckIcon } from "./icons";
 
 function getPosition(): Promise<LatLng> {
   return new Promise((resolve, reject) => {
@@ -92,7 +93,7 @@ export function OptimizeBar({
           version,
         );
         onNotify(
-          `Ruta por calles armada: ${trip.distanceKm.toFixed(1)} km, ~${Math.round(trip.durationMin)} min ${origin ? "desde tu ubicación" : "desde la primera parada"} ✓`,
+          `Ruta por calles armada: ${trip.distanceKm.toFixed(1)} km, ~${Math.round(trip.durationMin)} min ${origin ? "desde tu ubicación" : "desde la primera parada"}`,
         );
       } else {
         const order = optimizeOrder(effectiveOrigin, pending);
@@ -140,7 +141,9 @@ export function OptimizeBar({
               onClick={() => {
                 toast.dismiss(t.id);
                 clearRoute();
-                toast.success("Ruta nueva iniciada");
+                toast.success("Ruta nueva iniciada", {
+                  icon: <CheckIcon width={18} height={18} />,
+                });
               }}
             >
               Borrar todo
