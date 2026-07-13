@@ -1,5 +1,6 @@
 /* ============ Tokens: señalética de carretera a pleno sol ============ */
 :root {
+  color-scheme: light;
   --asfalto: #211e1a;        /* texto y franja de carretera */
   --asfalto-claro: #38342e;
   --pavimento: #e9e7e2;      /* fondo: concreto de día */
@@ -7,7 +8,8 @@
   --pintura-blanca: #fbfaf7; /* tarjetas: pintura blanca */
   --senal-verde: #1d7a46;    /* verde señal de destino: entregado */
   --cono: #d9481c;           /* naranja cono: errores */
-  --tinta-suave: #6f6859;
+  --tinta-suave: #625b4c;    /* oscurecido: #6f6859 quedaba bajo 4.5:1 sobre --pavimento */
+  --tinta-clara: #b3ac9c;    /* muted para texto sobre fondos oscuros (--asfalto) */
 
   --font-display: "Overpass", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
@@ -798,6 +800,7 @@ input {
   max-width: 480px;
   max-height: 82dvh;
   background: var(--pavimento);
+  color: var(--asfalto);
   border-radius: 14px 14px 0 0;
   border: 3px solid var(--asfalto);
   border-bottom: none;
@@ -976,7 +979,7 @@ input {
   padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
   border-top: 2px solid var(--asfalto-claro);
   background: var(--asfalto);
-  color: var(--tinta-suave);
+  color: var(--tinta-clara);
   font-size: 0.72rem;
   line-height: 1.4;
   flex-shrink: 0;
