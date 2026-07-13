@@ -76,6 +76,8 @@ export interface TripResult {
   source: string;
   /** true si el tiempo incluye tráfico en vivo (Mapbox) */
   withTraffic?: boolean;
+  /** Km del tramo final hasta el punto de retorno, si se pidió uno */
+  returnLegKm?: number;
 }
 
 interface OsrmTripResponse {
@@ -106,11 +108,14 @@ async function tryBase(
   stops: LatLng[],
   timeoutMs: number,
   profile: string,
+  returnPoint?: LatLng,
 ): Promise<TripResult | null> {
-  const coords = [origin, ...stops].map((p) => `${p.lng},${p.lat}`).join(";");
+  const allPoints = returnPoint ? [origin, ...stops, returnPoint] : [origin, ...stops];
+  const coords = allPoints.map((p) => `${p.lng},${p.lat}`).join(";");
+  const destination = returnPoint ? "last" : "any";
   const url =
     `${base}/trip/v1/${profile}/${coords}` +
-    `?roundtrip=false&source=first&geometries=geojson&overview=full`;
+    `?roundtrip=false&source=first&destination=${destination}&geometries=geojson&overview=full`;
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -123,7 +128,8 @@ async function tryBase(
     if (data.code !== "Ok" || !trip || !data.waypoints) return null;
 
     // waypoints[i].waypoint_index = posición de la coordenada i en el viaje
-    // (i=0 es el origen; i=1..n son las paradas)
+    // (i=0 es el origen; i=1..n son las paradas; si hay punto de retorno,
+    // i=n+1 es su coordenada, y con destination=last siempre es la última)
     const positions = data.waypoints.map((w) => w.waypoint_index);
     const order = stops
       .map((_, i) => i)
@@ -133,6 +139,9 @@ async function tryBase(
       const leg = trip.legs[positions[stopIdx + 1] - 1];
       return leg ? leg.distance / 1000 : 0;
     });
+    const returnLegKm = returnPoint
+      ? trip.legs[trip.legs.length - 1].distance / 1000
+      : undefined;
 
     return {
       order,
@@ -141,6 +150,7 @@ async function tryBase(
       durationMin: trip.duration / 60,
       coordinates: trip.geometry.coordinates,
       source: base,
+      returnLegKm,
     };
   } catch {
     return null; // red caída, CORS, timeout → prueba el siguiente servidor
@@ -160,10 +170,13 @@ async function tripMapbox(
   stops: LatLng[],
   timeoutMs: number,
   profile: string,
+  returnPoint?: LatLng,
 ): Promise<TripResult | null> {
   if (!MAPBOX_KEY) return null;
-  const order = optimizeOrder(origin, stops);
-  const sequence = [origin, ...order.map((i) => stops[i])];
+  const order = optimizeOrder(origin, stops, returnPoint);
+  const sequence = returnPoint
+    ? [origin, ...order.map((i) => stops[i]), returnPoint]
+    : [origin, ...order.map((i) => stops[i])];
   const coords = sequence.map((p) => `${p.lng},${p.lat}`).join(";");
   const url =
     `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}` +
@@ -178,14 +191,20 @@ async function tripMapbox(
     const route = data.routes?.[0];
     if (data.code !== "Ok" || !route) return null;
 
+    const legsKm = route.legs.map((l) => l.distance / 1000);
+    const returnLegKm = returnPoint ? legsKm[legsKm.length - 1] : undefined;
+
     return {
       order,
-      legsKm: route.legs.map((l) => l.distance / 1000),
+      // Sin punto de retorno, un leg por parada. Con punto de retorno, el
+      // último leg es el tramo hasta él — se expone aparte, no en legsKm.
+      legsKm: returnPoint ? legsKm.slice(0, -1) : legsKm,
       distanceKm: route.distance / 1000,
       durationMin: route.duration / 60,
       coordinates: route.geometry.coordinates,
       source: "mapbox",
       withTraffic: true,
+      returnLegKm,
     };
   } catch {
     return null;
@@ -197,21 +216,27 @@ async function tripMapbox(
 export async function tripThroughStreets(
   origin: LatLng,
   stops: LatLng[],
-  opts: { timeoutMs?: number; mode?: TransportMode } = {},
+  opts: { timeoutMs?: number; mode?: TransportMode; returnPoint?: LatLng } = {},
 ): Promise<TripResult | null> {
-  const { timeoutMs = 12000, mode = "car" } = opts;
+  const { timeoutMs = 12000, mode = "car", returnPoint } = opts;
   if (stops.length === 0) return null;
 
   const profile = OSRM_PROFILE[mode];
 
   if (ROUTING_PROVIDER === "mapbox") {
-    const viaMapbox = await tripMapbox(origin, stops, timeoutMs, MAPBOX_PROFILE[mode]);
+    const viaMapbox = await tripMapbox(
+      origin,
+      stops,
+      timeoutMs,
+      MAPBOX_PROFILE[mode],
+      returnPoint,
+    );
     if (viaMapbox) return viaMapbox;
     // Sin llave válida o fallo → cae a OSRM gratis
   }
 
   for (const base of osrmBasesFor(mode)) {
-    const result = await tryBase(base, origin, stops, timeoutMs, profile);
+    const result = await tryBase(base, origin, stops, timeoutMs, profile, returnPoint);
     if (result) return result;
   }
   return null;
