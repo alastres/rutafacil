@@ -780,6 +780,14 @@ input {
   border-color: var(--asfalto-claro);
 }
 
+/* Igual que .btn--ghost pero para fondos claros (paneles/hojas, no el
+ * cartel oscuro de los toasts de confirmación): texto y borde oscuros en
+ * vez de blancos, si no queda invisible sobre --pavimento/--pintura-blanca. */
+.btn--outline {
+  background: transparent;
+  color: var(--asfalto);
+}
+
 /* ============ Historial de rutas ============ */
 .history-trigger {
   display: inline-flex;

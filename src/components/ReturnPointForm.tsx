@@ -96,20 +96,20 @@ export function ReturnPointForm({
         <div className="return-point-form__actions-row">
           <button
             type="button"
-            className="btn btn--ghost"
+            className="btn btn--outline"
             onClick={() => void resolveFromPaste()}
             disabled={busy}
           >
             Usar enlace pegado
           </button>
-          <button type="button" className="btn btn--ghost" onClick={() => setShowMapPicker(true)}>
+          <button type="button" className="btn btn--outline" onClick={() => setShowMapPicker(true)}>
             Tocar en el mapa
           </button>
         </div>
       </div>
 
       <div className="return-point-form__actions">
-        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+        <button type="button" className="btn btn--outline" onClick={onCancel}>
           Cancelar
         </button>
         <button type="button" className="btn btn-nav" onClick={confirmSave}>
