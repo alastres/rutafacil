@@ -9,6 +9,8 @@ import {
   FaTriangleExclamation,
   FaXmark,
   FaArrowRight,
+  FaMapPin,
+  FaPlus,
 } from "react-icons/fa6";
 import type { IconBaseProps } from "react-icons";
 
@@ -26,6 +28,8 @@ export const CheckIcon = FaCheck;
 export const AlertIcon = FaTriangleExclamation;
 export const CloseIcon = FaXmark;
 export const ArrowRightIcon = FaArrowRight;
+export const PinIcon = FaMapPin;
+export const PlusIcon = FaPlus;
 
 /** Markup estático del check, para el marcador de mapa creado fuera de React
  * (MapLibre construye esos elementos de forma imperativa, sin árbol de
@@ -33,4 +37,11 @@ export const ArrowRightIcon = FaArrowRight;
  * consistencia visual con el resto de la app. */
 export const CHECK_SVG_MARKUP = renderToStaticMarkup(
   createElement(FaCheck, { size: 14 }),
+);
+
+/** Markup estático del pin de punto de retorno, para el marcador de mapa
+ * creado fuera de React (MapLibre construye esos elementos de forma
+ * imperativa, sin árbol de React). */
+export const PIN_SVG_MARKUP = renderToStaticMarkup(
+  createElement(FaMapPin, { size: 14 }),
 );
