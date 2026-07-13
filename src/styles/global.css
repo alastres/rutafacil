@@ -1137,6 +1137,69 @@ input {
   flex: 1;
 }
 
+/* ============ Formulario de punto de retorno ============ */
+.return-point-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.return-point-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.return-point-form__field input,
+.return-point-form__field textarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--pintura-blanca);
+  color: var(--asfalto);
+  resize: none;
+}
+
+.return-point-form__picked {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  color: var(--asfalto);
+}
+
+.return-point-form__picked--empty {
+  color: var(--tinta-suave);
+}
+
+.return-point-form__actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.return-point-form__actions-row .btn {
+  flex: 1;
+}
+
+.return-point-form__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.return-point-form__actions .btn {
+  flex: 1;
+}
+
 /* ============ Movimiento reducido ============ */
 @media (prefers-reduced-motion: reduce) {
   .road-list::after {
