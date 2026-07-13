@@ -87,9 +87,11 @@ export function LiveTracker() {
 }
 
 async function reroute(pending: Stop[], from: LatLng) {
-  const { mode } = useRouteStore.getState();
+  const { mode, returnPoint } = useRouteStore.getState();
   const version = useRouteStore.getState().beginRouteRequest();
-  const trip = await withLoader(() => tripThroughStreets(from, pending, { mode }));
+  const trip = await withLoader(() =>
+    tripThroughStreets(from, pending, { mode, returnPoint: returnPoint ?? undefined }),
+  );
   if (!trip) return;
   const ordered = trip.order.map((i, idx) => ({
     ...pending[i],
@@ -103,6 +105,7 @@ async function reroute(pending: Stop[], from: LatLng) {
       durationMin: trip.durationMin,
       geometry: trip.coordinates,
       byStreets: true,
+      returnLegKm: trip.returnLegKm ?? null,
     },
     version,
   );

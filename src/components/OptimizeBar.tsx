@@ -47,6 +47,7 @@ export function OptimizeBar({
   const beginRouteRequest = useRouteStore((s) => s.beginRouteRequest);
   const clearRoute = useRouteStore((s) => s.clearRoute);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
+  const returnPoint = useRouteStore((s) => s.returnPoint);
   const mode = useRouteStore((s) => s.mode);
   const tracking = useRouteStore((s) => s.tracking);
   const startTracking = useRouteStore((s) => s.startTracking);
@@ -73,9 +74,13 @@ export function OptimizeBar({
         );
       }
       const effectiveOrigin = origin ?? pending[0];
+      const returnLatLng = returnPoint ?? undefined;
 
       // Primero por calles reales (OSRM); si no hay conexión, línea recta
-      const trip = await tripThroughStreets(effectiveOrigin, pending, { mode });
+      const trip = await tripThroughStreets(effectiveOrigin, pending, {
+        mode,
+        returnPoint: returnLatLng,
+      });
       if (trip) {
         const ordered: Stop[] = trip.order.map((stopIdx, i) => ({
           ...pending[stopIdx],
@@ -89,6 +94,7 @@ export function OptimizeBar({
             durationMin: trip.durationMin,
             geometry: trip.coordinates,
             byStreets: true,
+            returnLegKm: trip.returnLegKm ?? null,
           },
           version,
         );
@@ -96,14 +102,19 @@ export function OptimizeBar({
           `Ruta por calles armada: ${trip.distanceKm.toFixed(1)} km, ~${Math.round(trip.durationMin)} min ${origin ? "desde tu ubicación" : "desde la primera parada"}`,
         );
       } else {
-        const order = optimizeOrder(effectiveOrigin, pending);
+        const order = optimizeOrder(effectiveOrigin, pending, returnLatLng);
         let prev: LatLng = effectiveOrigin;
         const ordered: Stop[] = order.map((i) => {
           const stop = { ...pending[i], legKm: haversineKm(prev, pending[i]) };
           prev = stop;
           return stop;
         });
-        const km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        let km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        let returnLegKm: number | null = null;
+        if (returnLatLng) {
+          returnLegKm = haversineKm(prev, returnLatLng);
+          km += returnLegKm;
+        }
         applyOptimization(
           {
             ordered,
@@ -112,6 +123,7 @@ export function OptimizeBar({
             durationMin: null,
             geometry: null,
             byStreets: false,
+            returnLegKm,
           },
           version,
         );
