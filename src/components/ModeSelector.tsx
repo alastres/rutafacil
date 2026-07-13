@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
+import type { IconType } from "react-icons";
 import { useRouteStore } from "../state/routeStore";
 import { useLoadingStore } from "../state/loadingStore";
 import type { TransportMode } from "../lib/routing";
-import { CarIcon, MotorbikeIcon, BikeIcon, WalkIcon, type IconProps } from "./icons";
+import { CarIcon, MotorbikeIcon, BikeIcon, WalkIcon } from "./icons";
 
 const MODES: {
   value: TransportMode;
   label: string;
-  Icon: (props: IconProps) => JSX.Element;
+  Icon: IconType;
 }[] = [
   { value: "car", label: "Auto", Icon: CarIcon },
   { value: "motorbike", label: "Moto", Icon: MotorbikeIcon },
