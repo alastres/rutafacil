@@ -1,4 +1,5 @@
 import { useRouteStore } from "../state/routeStore";
+import { HistoryPanel } from "./HistoryPanel";
 
 export function Header() {
   const stops = useRouteStore((s) => s.stops);
@@ -9,10 +10,13 @@ export function Header() {
 
   return (
     <header className="header">
-      <span className="wordmark" aria-label="RutaFácil">
-        <span className="wordmark-ruta">Ruta</span>
-        <span className="wordmark-facil">Fácil</span>
-      </span>
+      <div className="header-top">
+        <span className="wordmark" aria-label="RutaFácil">
+          <span className="wordmark-ruta">Ruta</span>
+          <span className="wordmark-facil">Fácil</span>
+        </span>
+        <HistoryPanel />
+      </div>
       <div className="header-ticker" aria-live="polite">
         <span>
           {pending} {pending === 1 ? "parada" : "paradas"}

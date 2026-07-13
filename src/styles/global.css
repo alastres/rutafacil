@@ -69,6 +69,13 @@ input {
   z-index: 20;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .wordmark {
   display: inline-flex;
   align-items: stretch;
@@ -755,6 +762,213 @@ input {
   background: transparent;
   color: var(--pintura-blanca);
   border-color: var(--asfalto-claro);
+}
+
+/* ============ Historial de rutas ============ */
+.history-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--asfalto-claro);
+  background: transparent;
+  color: var(--pintura-blanca);
+  flex-shrink: 0;
+}
+
+.history-trigger:hover {
+  border-color: var(--pintura);
+  color: var(--pintura);
+}
+
+.history-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(33, 30, 26, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.history-panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 82dvh;
+  background: var(--pavimento);
+  border-radius: 14px 14px 0 0;
+  border: 3px solid var(--asfalto);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.history-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  padding: 14px 16px;
+  flex-shrink: 0;
+}
+
+.history-panel__header h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.history-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--pintura-blanca);
+}
+
+.history-close:hover {
+  color: var(--pintura);
+}
+
+.history-empty {
+  padding: 24px 18px 32px;
+  text-align: center;
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 12px 14px calc(20px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  background: var(--pintura-blanca);
+  border: 2px solid var(--asfalto);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.history-item.is-completed {
+  border-color: var(--senal-verde);
+}
+
+.history-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-item__label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item__input {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  border: 2px solid var(--asfalto);
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: var(--pintura-blanca);
+  color: var(--asfalto);
+}
+
+.history-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pintura);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--pintura-blanca);
+}
+
+.history-badge {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--pintura);
+  color: var(--asfalto);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.history-badge.is-completed {
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+}
+
+.history-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  color: var(--tinta-suave);
+}
+
+.history-item__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--asfalto);
+}
+
+.history-item__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.history-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--asfalto);
+  background: var(--pavimento);
+  color: var(--asfalto);
+}
+
+.history-icon-btn--danger:hover {
+  border-color: var(--cono);
+  color: var(--cono);
 }
 
 /* ============ Movimiento reducido ============ */

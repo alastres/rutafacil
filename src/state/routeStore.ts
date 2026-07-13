@@ -8,6 +8,7 @@ import { tripThroughStreets } from "../lib/routing";
 import type { TransportMode } from "../lib/routing";
 import { withLoader } from "./loadingStore";
 import { AlertIcon } from "../components/icons";
+import { putRoute, defaultRouteLabel, type RouteHistoryRecord } from "../lib/historyDb";
 
 export interface Stop {
   id: string;
@@ -54,11 +55,34 @@ interface RouteState {
    * "bici" rápido podía dejar en pantalla la ruta de "auto").
    */
   routeVersion: number;
+  /**
+   * Identidad de la ruta activa en el historial (IndexedDB). Se crea sola
+   * con la primera parada y se suelta al vaciar la ruta o tocar "Nueva" —
+   * así cada tanda de entregas queda como un registro propio.
+   */
+  historyId: string | null;
+  historyLabel: string | null;
+  historyCreatedAt: number | null;
+  /** Cuándo se activó "Seguir" por primera vez para la ruta activa. */
+  trackingStartedAt: number | null;
+  /** Cuándo se marcó la última entrega pendiente como completada. */
+  completedAt: number | null;
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
+  /** Renombra la ruta activa (usado por el panel de historial). */
+  setHistoryLabel: (label: string) => Promise<void>;
+  /**
+   * Desvincula la ruta en pantalla de su registro de historial, sin tocar
+   * las paradas visibles. Se usa cuando ese registro se borra desde el
+   * panel mientras la ruta sigue activa: si no se hiciera, el siguiente
+   * cambio (una entrega marcada, etc.) volvería a escribirlo en
+   * IndexedDB con los datos vigentes, "resucitando" lo que se acababa de
+   * borrar.
+   */
+  detachHistory: (id: string) => void;
   /** Reserva la siguiente versión antes de iniciar un cálculo de ruta. */
   beginRouteRequest: () => number;
   /**
@@ -75,6 +99,8 @@ interface RouteState {
 
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
+const newHistoryId = () =>
+  `route-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /** Una modificación de paradas invalida la optimización vigente */
 const invalidated = {
@@ -82,6 +108,36 @@ const invalidated = {
   durationMin: null,
   geometry: null,
 } as const;
+
+/**
+ * Recalcula el registro de historial a partir del estado actual y lo guarda
+ * en IndexedDB (best-effort: si falla — p. ej. modo privado restringido —
+ * no debe romper la app, solo se pierde ese registro puntual).
+ */
+function syncHistory(s: RouteState): Promise<void> {
+  if (!s.historyId || s.stops.length === 0) return Promise.resolve();
+  const delivered = s.stops.filter((st) => st.delivered).length;
+  const record: RouteHistoryRecord = {
+    id: s.historyId,
+    label: s.historyLabel ?? defaultRouteLabel(s.historyCreatedAt ?? Date.now()),
+    createdAt: s.historyCreatedAt ?? Date.now(),
+    updatedAt: Date.now(),
+    trackingStartedAt: s.trackingStartedAt,
+    completedAt: s.completedAt,
+    elapsedMs:
+      s.completedAt !== null && s.trackingStartedAt !== null
+        ? s.completedAt - s.trackingStartedAt
+        : null,
+    mode: s.mode,
+    stopsTotal: s.stops.length,
+    stopsDelivered: delivered,
+    distanceKm: s.optimizedKm,
+    status: s.completedAt !== null ? "completed" : "active",
+  };
+  // best-effort: si falla (p. ej. modo privado restringido) no debe romper
+  // la app, solo se pierde ese guardado puntual.
+  return putRoute(record).catch(() => {});
+}
 
 export const useRouteStore = create<RouteState>()(
   persist(
@@ -96,8 +152,15 @@ export const useRouteStore = create<RouteState>()(
       live: null,
       tracking: false,
       routeVersion: 0,
+      historyId: null,
+      historyLabel: null,
+      historyCreatedAt: null,
+      trackingStartedAt: null,
+      completedAt: null,
 
-      addStop: (lat, lng, label) =>
+      addStop: (lat, lng, label) => {
+        const now = Date.now();
+        const isFresh = get().historyId === null;
         set((s) => ({
           stops: [
             ...s.stops,
@@ -107,43 +170,113 @@ export const useRouteStore = create<RouteState>()(
               lng,
               label: label ?? `Parada ${s.stops.length + 1}`,
               delivered: false,
-              createdAt: Date.now(),
+              createdAt: now,
             },
           ],
           ...invalidated,
-        })),
+          ...(isFresh
+            ? {
+                historyId: newHistoryId(),
+                historyLabel: null,
+                historyCreatedAt: now,
+                trackingStartedAt: null,
+                completedAt: null,
+              }
+            : {}),
+        }));
+        syncHistory(get());
+      },
 
-      removeStop: (id) =>
+      removeStop: (id) => {
         set((s) => ({
           stops: s.stops.filter((st) => st.id !== id),
           ...invalidated,
-        })),
+        }));
+        const s = get();
+        if (s.stops.length === 0) {
+          // Ruta vaciada: no queda nada útil que conservar como registro
+          set({
+            historyId: null,
+            historyLabel: null,
+            historyCreatedAt: null,
+            trackingStartedAt: null,
+            completedAt: null,
+          });
+        } else {
+          syncHistory(s);
+        }
+      },
 
-      renameStop: (id, label) =>
+      renameStop: (id, label) => {
         set((s) => ({
           stops: s.stops.map((st) => (st.id === id ? { ...st, label } : st)),
-        })),
+        }));
+        syncHistory(get());
+      },
 
-      toggleDelivered: (id) =>
-        set((s) => ({
-          stops: s.stops.map((st) =>
+      toggleDelivered: (id) => {
+        set((s) => {
+          const stops = s.stops.map((st) =>
             st.id === id ? { ...st, delivered: !st.delivered } : st,
-          ),
-        })),
+          );
+          const allDelivered = stops.length > 0 && stops.every((st) => st.delivered);
+          return {
+            stops,
+            // Se completa la primera vez que todas quedan entregadas; si se
+            // deshace una entrega, la ruta vuelve a quedar "en curso".
+            completedAt: allDelivered ? (s.completedAt ?? Date.now()) : null,
+          };
+        });
+        syncHistory(get());
+      },
 
-      clearRoute: () =>
+      clearRoute: () => {
+        // Último guardado del registro saliente antes de soltarlo — "Nueva"
+        // no borra el historial, solo empieza una tanda de entregas distinta.
+        syncHistory(get());
         set({
           stops: [],
           origin: null,
           byStreets: false,
           live: null,
           tracking: false,
+          historyId: null,
+          historyLabel: null,
+          historyCreatedAt: null,
+          trackingStartedAt: null,
+          completedAt: null,
           ...invalidated,
-        }),
+        });
+      },
+
+      setHistoryLabel: async (label) => {
+        set({ historyLabel: label });
+        await syncHistory(get());
+      },
+
+      detachHistory: (id) => {
+        if (get().historyId !== id) return;
+        set({
+          historyId: null,
+          historyLabel: null,
+          historyCreatedAt: null,
+          trackingStartedAt: null,
+          completedAt: null,
+        });
+      },
 
       setLive: (pos) => set({ live: pos }),
 
-      startTracking: () => set({ tracking: true, live: null }),
+      startTracking: () => {
+        set((s) => ({
+          tracking: true,
+          live: null,
+          // Solo se marca la primera vez: si el usuario para y vuelve a
+          // seguir la MISMA ruta, la duración sigue contando desde el inicio.
+          trackingStartedAt: s.trackingStartedAt ?? Date.now(),
+        }));
+        syncHistory(get());
+      },
 
       stopTracking: () => set({ tracking: false, live: null }),
 
@@ -225,6 +358,7 @@ export const useRouteStore = create<RouteState>()(
           geometry,
           byStreets,
         });
+        syncHistory(get());
       },
     }),
     { name: "rutafacil-route" },
