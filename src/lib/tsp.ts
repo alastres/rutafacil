@@ -10,17 +10,23 @@ import { haversineKm, type LatLng } from "./geo";
  *
  * Devuelve los índices de `stops` en el orden recomendado.
  */
-export function optimizeOrder(origin: LatLng, stops: LatLng[]): number[] {
+export function optimizeOrder(
+  origin: LatLng,
+  stops: LatLng[],
+  fixedEnd?: LatLng,
+): number[] {
   const n = stops.length;
   if (n <= 1) return stops.map((_, i) => i);
 
-  // Matriz de distancias: índice 0 = origen, 1..n = paradas
-  const points = [origin, ...stops];
+  // Matriz de distancias: índice 0 = origen, 1..n = paradas, n+1 = punto de
+  // retorno (si lo hay)
+  const points = fixedEnd ? [origin, ...stops, fixedEnd] : [origin, ...stops];
   const dist: number[][] = points.map((a) =>
     points.map((b) => haversineKm(a, b)),
   );
+  const endIdx = fixedEnd ? n + 1 : null;
 
-  // Vecino más cercano desde el origen
+  // Vecino más cercano desde el origen (nunca visita el punto de retorno)
   const visited = new Array<boolean>(n + 1).fill(false);
   visited[0] = true;
   const path: number[] = [0];
@@ -38,8 +44,11 @@ export function optimizeOrder(origin: LatLng, stops: LatLng[]): number[] {
     path.push(best);
     current = best;
   }
+  if (endIdx !== null) path.push(endIdx);
 
-  // 2-opt: invierte segmentos mientras acorte el camino (origen fijo)
+  // 2-opt: invierte segmentos mientras acorte el camino. El origen (posición
+  // 0) y, si existe, el punto de retorno (última posición) quedan siempre
+  // fijos — el rango que se reordena es siempre 1..n.
   let improved = true;
   while (improved) {
     improved = false;
@@ -48,7 +57,7 @@ export function optimizeOrder(origin: LatLng, stops: LatLng[]): number[] {
         const a = path[i - 1];
         const b = path[i];
         const c = path[k];
-        const d = k + 1 <= n ? path[k + 1] : null;
+        const d = k + 1 <= n ? path[k + 1] : endIdx;
         const before = dist[a][b] + (d !== null ? dist[c][d] : 0);
         const after = dist[a][c] + (d !== null ? dist[b][d] : 0);
         if (after < before - 1e-9) {
@@ -65,17 +74,24 @@ export function optimizeOrder(origin: LatLng, stops: LatLng[]): number[] {
     }
   }
 
-  // Traducir a índices de `stops` (restar el origen)
-  return path.slice(1).map((p) => p - 1);
+  // Traducir a índices de `stops` (restar el origen); se descarta la
+  // posición del punto de retorno del resultado — no es una parada, el
+  // llamador lo agrega aparte.
+  return path.slice(1, n + 1).map((p) => p - 1);
 }
 
 /** Distancia total del camino origen → paradas en el orden dado. */
-export function pathLengthKm(origin: LatLng, orderedStops: LatLng[]): number {
+export function pathLengthKm(
+  origin: LatLng,
+  orderedStops: LatLng[],
+  fixedEnd?: LatLng,
+): number {
   let total = 0;
   let prev = origin;
   for (const stop of orderedStops) {
     total += haversineKm(prev, stop);
     prev = stop;
   }
+  if (fixedEnd) total += haversineKm(prev, fixedEnd);
   return total;
 }
