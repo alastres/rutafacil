@@ -30,6 +30,7 @@ export interface OptimizationResult {
   /** Geometría de la ruta por calles [lng, lat], o null si es línea recta */
   geometry: [number, number][] | null;
   byStreets: boolean;
+  returnLegKm?: number | null;
 }
 
 interface RouteState {
@@ -39,6 +40,13 @@ interface RouteState {
   durationMin: number | null;
   byStreets: boolean;
   origin: LatLng | null;
+  /** Punto de retorno asignado a la ruta activa (copia, no una referencia:
+   * si el punto guardado se borra o renombra después, la ruta activa y el
+   * historial ya escrito conservan el nombre/ubicación que tenían). */
+  returnPoint: { id: string; label: string; lat: number; lng: number } | null;
+  /** Km del tramo final hasta el punto de retorno, una vez optimizada la
+   * ruta; null si no hay punto de retorno o aún no se ha optimizado. */
+  returnLegKm: number | null;
   geometry: [number, number][] | null;
   /** Modo de transporte usado para calcular la ruta */
   mode: TransportMode;
@@ -72,6 +80,9 @@ interface RouteState {
   renameStop: (id: string, label: string) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
+  setReturnPoint: (
+    point: { id: string; label: string; lat: number; lng: number } | null,
+  ) => void;
   /** Renombra la ruta activa (usado por el panel de historial). */
   setHistoryLabel: (label: string) => Promise<void>;
   /**
@@ -107,6 +118,7 @@ const invalidated = {
   optimizedKm: null,
   durationMin: null,
   geometry: null,
+  returnLegKm: null,
 } as const;
 
 /**
@@ -143,6 +155,7 @@ function syncHistory(s: RouteState): Promise<void> {
     })),
     geometry: s.geometry,
     origin: s.origin,
+    returnPoint: s.returnPoint,
   };
   // best-effort: si falla (p. ej. modo privado restringido) no debe romper
   // la app, solo se pierde ese guardado puntual.
@@ -157,6 +170,8 @@ export const useRouteStore = create<RouteState>()(
       durationMin: null,
       byStreets: false,
       origin: null,
+      returnPoint: null,
+      returnLegKm: null,
       geometry: null,
       mode: "car",
       live: null,
@@ -247,6 +262,7 @@ export const useRouteStore = create<RouteState>()(
         set({
           stops: [],
           origin: null,
+          returnPoint: null,
           byStreets: false,
           live: null,
           tracking: false,
@@ -257,6 +273,11 @@ export const useRouteStore = create<RouteState>()(
           completedAt: null,
           ...invalidated,
         });
+      },
+
+      setReturnPoint: (point) => {
+        set({ returnPoint: point, ...invalidated });
+        syncHistory(get());
       },
 
       setHistoryLabel: async (label) => {
@@ -291,7 +312,7 @@ export const useRouteStore = create<RouteState>()(
       stopTracking: () => set({ tracking: false, live: null }),
 
       setMode: async (mode) => {
-        const { origin, stops } = get();
+        const { origin, stops, returnPoint } = get();
         const pending = stops.filter((s) => !s.delivered);
         const version = get().beginRouteRequest();
         set({ mode, ...invalidated });
@@ -299,7 +320,10 @@ export const useRouteStore = create<RouteState>()(
         if (!origin || pending.length < 1) return;
 
         const trip = await withLoader(() =>
-          tripThroughStreets(origin, pending, { mode }),
+          tripThroughStreets(origin, pending, {
+            mode,
+            returnPoint: returnPoint ?? undefined,
+          }),
         );
         if (trip) {
           const ordered = trip.order.map((i, idx) => ({
@@ -314,6 +338,7 @@ export const useRouteStore = create<RouteState>()(
               durationMin: trip.durationMin,
               geometry: trip.coordinates,
               byStreets: true,
+              returnLegKm: trip.returnLegKm ?? null,
             },
             version,
           );
@@ -324,16 +349,21 @@ export const useRouteStore = create<RouteState>()(
         // perfil no disponible, sin conexión): respaldo en línea recta en
         // vez de dejar la app sin ruta actualizada.
         if (version !== get().routeVersion) return; // ya hay algo más reciente
-        const order = optimizeOrder(origin, pending);
+        const order = optimizeOrder(origin, pending, returnPoint ?? undefined);
         let prev: LatLng = origin;
         const ordered = order.map((i) => {
           const stop = { ...pending[i], legKm: haversineKm(prev, pending[i]) };
           prev = stop;
           return stop;
         });
-        const km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        let km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        let returnLegKm: number | null = null;
+        if (returnPoint) {
+          returnLegKm = haversineKm(prev, returnPoint);
+          km += returnLegKm;
+        }
         get().applyOptimization(
-          { ordered, origin, km, durationMin: null, geometry: null, byStreets: false },
+          { ordered, origin, km, durationMin: null, geometry: null, byStreets: false, returnLegKm },
           version,
         );
         toast(
@@ -352,7 +382,7 @@ export const useRouteStore = create<RouteState>()(
       },
 
       applyOptimization: (
-        { ordered, origin, km, durationMin, geometry, byStreets },
+        { ordered, origin, km, durationMin, geometry, byStreets, returnLegKm },
         version,
       ) => {
         // Resultado de una solicitud ya superada por otra más reciente: se
@@ -367,6 +397,7 @@ export const useRouteStore = create<RouteState>()(
           durationMin,
           geometry,
           byStreets,
+          returnLegKm: returnLegKm ?? null,
         });
         syncHistory(get());
       },
