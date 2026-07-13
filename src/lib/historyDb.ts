@@ -1,8 +1,9 @@
 import type { TransportMode } from "./routing";
 
 const DB_NAME = "rutafacil-history";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "routes";
+const RETURN_POINTS_STORE = "returnPoints";
 
 /** Copia liviana de una parada, tal como estaba al guardar el registro. No
  * reutiliza el tipo `Stop` de routeStore.ts para evitar un ciclo de
@@ -40,6 +41,8 @@ export interface RouteHistoryRecord {
   /** Geometría de la ruta por calles [lng, lat]; null si fue línea recta. */
   geometry?: [number, number][] | null;
   origin?: { lat: number; lng: number } | null;
+  /** Punto de retorno usado al momento de guardar este registro, si tenía uno. */
+  returnPoint?: { lat: number; lng: number; label: string } | null;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -50,6 +53,9 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: "id" });
         store.createIndex("updatedAt", "updatedAt");
+      }
+      if (!db.objectStoreNames.contains(RETURN_POINTS_STORE)) {
+        db.createObjectStore(RETURN_POINTS_STORE, { keyPath: "id" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -75,6 +81,52 @@ export async function deleteRoute(id: string): Promise<void> {
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
+  });
+}
+
+export interface SavedReturnPoint {
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Crea o reemplaza un punto de retorno guardado. */
+export async function putReturnPoint(point: SavedReturnPoint): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(RETURN_POINTS_STORE, "readwrite");
+    tx.objectStore(RETURN_POINTS_STORE).put(point);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function deleteReturnPoint(id: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(RETURN_POINTS_STORE, "readwrite");
+    tx.objectStore(RETURN_POINTS_STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Todos los puntos de retorno guardados, ordenados alfabéticamente. */
+export async function listReturnPoints(): Promise<SavedReturnPoint[]> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(RETURN_POINTS_STORE, "readonly");
+    const req = tx.objectStore(RETURN_POINTS_STORE).getAll();
+    req.onsuccess = () => {
+      const points = (req.result as SavedReturnPoint[]).sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+      resolve(points);
+    };
+    req.onerror = () => reject(req.error);
   });
 }
 
