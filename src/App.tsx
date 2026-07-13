@@ -7,6 +7,7 @@ import { useRouteStore } from "./state/routeStore";
 import { withLoader } from "./state/loadingStore";
 import { Header } from "./components/Header";
 import { AddStop } from "./components/AddStop";
+import { ReturnPointTrigger } from "./components/ReturnPointSheet";
 import { EmptyState } from "./components/EmptyState";
 import { RoadList } from "./components/RoadList";
 import { OptimizeBar } from "./components/OptimizeBar";
@@ -110,6 +111,7 @@ export default function App() {
       <Header />
       <ModeSelector />
       <AddStop onSubmit={ingest} onNotify={notify} />
+      <ReturnPointTrigger onNotify={notify} />
       {showMap && stops.length > 0 && (
         <Suspense fallback={<div className="map-wrap" />}>
           <MapView />
