@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { CHECK_SVG_MARKUP } from "./icons";
+import { CHECK_SVG_MARKUP, PIN_SVG_MARKUP } from "./icons";
 import type { HistoryStop } from "../lib/historyDb";
 
 /** Mismo estilo base que el mapa principal, para que el detalle se vea
@@ -28,10 +28,12 @@ export default function RouteDetailMap({
   stops,
   geometry,
   origin,
+  returnPoint,
 }: {
   stops: HistoryStop[];
   geometry: [number, number][] | null | undefined;
   origin: { lat: number; lng: number } | null | undefined;
+  returnPoint: { lat: number; lng: number; label: string } | null | undefined;
 }) {
   const container = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,9 @@ export default function RouteDetailMap({
               ? [[origin.lng, origin.lat] as [number, number]]
               : []),
             ...validStops.map((s) => [s.lng, s.lat] as [number, number]),
+            ...(returnPoint && Number.isFinite(returnPoint.lng) && Number.isFinite(returnPoint.lat)
+              ? [[returnPoint.lng, returnPoint.lat] as [number, number]]
+              : []),
           ];
 
       map.addSource("route", {
@@ -95,6 +100,13 @@ export default function RouteDetailMap({
         el.textContent = "TÚ";
         new maplibregl.Marker({ element: el }).setLngLat([origin.lng, origin.lat]).addTo(map);
         bounds.extend([origin.lng, origin.lat]);
+      }
+      if (returnPoint && Number.isFinite(returnPoint.lng) && Number.isFinite(returnPoint.lat)) {
+        const el = document.createElement("div");
+        el.className = "map-marker is-return";
+        el.innerHTML = PIN_SVG_MARKUP;
+        new maplibregl.Marker({ element: el }).setLngLat([returnPoint.lng, returnPoint.lat]).addTo(map);
+        bounds.extend([returnPoint.lng, returnPoint.lat]);
       }
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: 36, maxZoom: 15, duration: 0 });

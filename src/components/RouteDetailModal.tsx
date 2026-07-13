@@ -86,12 +86,21 @@ export function RouteDetailModal({
                 {record.stopsDelivered}/{record.stopsTotal} entregadas
               </dd>
             </div>
+            <div>
+              <dt>Punto de retorno</dt>
+              <dd>{record.returnPoint?.label ?? "—"}</dd>
+            </div>
           </dl>
 
           {stops.length > 0 ? (
             <>
               <Suspense fallback={<div className="map-wrap" />}>
-                <RouteDetailMap stops={stops} geometry={record.geometry} origin={record.origin} />
+                <RouteDetailMap
+                  stops={stops}
+                  geometry={record.geometry}
+                  origin={record.origin}
+                  returnPoint={record.returnPoint}
+                />
               </Suspense>
 
               <ol className="history-detail__stops">
