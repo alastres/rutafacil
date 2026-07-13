@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouteStore } from "../state/routeStore";
 import { fetchIncidents } from "../lib/routing";
-import { CHECK_SVG_MARKUP } from "./icons";
+import { CHECK_SVG_MARKUP, PIN_SVG_MARKUP } from "./icons";
 
 const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
@@ -41,6 +41,7 @@ export default function MapView() {
   const byStreets = useRouteStore((s) => s.byStreets);
   const live = useRouteStore((s) => s.live);
   const tracking = useRouteStore((s) => s.tracking);
+  const returnPoint = useRouteStore((s) => s.returnPoint);
 
   useEffect(() => {
     if (!container.current) return;
@@ -107,6 +108,16 @@ export default function MapView() {
           .addTo(map),
       );
     }
+    if (returnPoint) {
+      const el = document.createElement("div");
+      el.className = "map-marker is-return";
+      el.innerHTML = PIN_SVG_MARKUP;
+      markersRef.current.push(
+        new maplibregl.Marker({ element: el })
+          .setLngLat([returnPoint.lng, returnPoint.lat])
+          .addTo(map),
+      );
+    }
 
     const updateLine = () => {
       const source = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
@@ -141,6 +152,9 @@ export default function MapView() {
       if (origin && Number.isFinite(origin.lng) && Number.isFinite(origin.lat)) {
         bounds.extend([origin.lng, origin.lat]);
       }
+      if (returnPoint && Number.isFinite(returnPoint.lng) && Number.isFinite(returnPoint.lat)) {
+        bounds.extend([returnPoint.lng, returnPoint.lat]);
+      }
       try {
         // Cancela cualquier animación de cámara en curso (p. ej. un easeTo de
         // seguimiento) para no chocar con fitBounds y evitar "already running"
@@ -150,7 +164,7 @@ export default function MapView() {
         // Nunca debe romper la app por un ajuste de cámara
       }
     }
-  }, [stops, origin, geometry, byStreets, tracking]);
+  }, [stops, origin, geometry, byStreets, tracking, returnPoint]);
 
   // Crea/quita el marcador "TÚ" en vivo según el estado de seguimiento.
   // Solo depende de `tracking` para NO destruirlo en cada fix de GPS.

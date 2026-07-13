@@ -265,6 +265,13 @@ input {
   color: var(--tinta-suave);
 }
 
+.marker-return {
+  background: var(--pintura-blanca);
+  border-color: var(--cono);
+  color: var(--cono);
+  font-size: 0.65rem;
+}
+
 /* ============ Tarjeta de parada: señal pintada ============ */
 .stop-card {
   background: var(--pintura-blanca);
@@ -640,6 +647,13 @@ input {
 .map-marker.is-origin {
   background: var(--pintura-blanca);
   border-color: var(--pintura);
+  font-size: 0.65rem;
+}
+
+.map-marker.is-return {
+  background: var(--pintura-blanca);
+  border-color: var(--cono);
+  color: var(--cono);
   font-size: 0.65rem;
 }
 

@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { googleMapsNavUrl } from "../lib/nav";
 import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
-import { CheckIcon, CloseIcon, ArrowRightIcon } from "./icons";
+import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon } from "./icons";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
@@ -10,6 +10,8 @@ export function RoadList({ moving }: { moving: boolean }) {
   const byStreets = useRouteStore((s) => s.byStreets);
   const origin = useRouteStore((s) => s.origin);
   const live = useRouteStore((s) => s.live);
+  const returnPoint = useRouteStore((s) => s.returnPoint);
+  const returnLegKm = useRouteStore((s) => s.returnLegKm);
   const optimized = optimizedKm !== null;
   const nextStop = stops.find((s) => !s.delivered);
   const nextId = nextStop?.id;
@@ -53,6 +55,17 @@ export function RoadList({ moving }: { moving: boolean }) {
           />
         ))}
       </AnimatePresence>
+      {returnPoint && (
+        <li className="road-item road-return" aria-label="Punto de retorno">
+          <span className="marker marker-return" aria-hidden="true">
+            <PinIcon size={13} />
+          </span>
+          <div className="origin-chip">
+            Punto de retorno · {returnPoint.label}
+            {optimized && returnLegKm !== null && ` · +${returnLegKm.toFixed(1)} km`}
+          </div>
+        </li>
+      )}
     </ol>
   );
 }
