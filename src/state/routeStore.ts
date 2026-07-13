@@ -133,6 +133,16 @@ function syncHistory(s: RouteState): Promise<void> {
     stopsDelivered: delivered,
     distanceKm: s.optimizedKm,
     status: s.completedAt !== null ? "completed" : "active",
+    stops: s.stops.map((st) => ({
+      id: st.id,
+      lat: st.lat,
+      lng: st.lng,
+      label: st.label,
+      delivered: st.delivered,
+      legKm: st.legKm,
+    })),
+    geometry: s.geometry,
+    origin: s.origin,
   };
   // best-effort: si falla (p. ej. modo privado restringido) no debe romper
   // la app, solo se pierde ese guardado puntual.

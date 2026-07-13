@@ -5,7 +5,9 @@ import { useLoadingStore } from "../state/loadingStore";
 import type { TransportMode } from "../lib/routing";
 import { CarIcon, MotorbikeIcon, BikeIcon, WalkIcon } from "./icons";
 
-const MODES: {
+/** Datos de cada modo de transporte; se reutiliza en la vista de detalle
+ * del historial para mostrar el mismo ícono/nombre del vehículo usado. */
+export const MODES: {
   value: TransportMode;
   label: string;
   Icon: IconType;

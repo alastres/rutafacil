@@ -4,6 +4,18 @@ const DB_NAME = "rutafacil-history";
 const DB_VERSION = 1;
 const STORE = "routes";
 
+/** Copia liviana de una parada, tal como estaba al guardar el registro. No
+ * reutiliza el tipo `Stop` de routeStore.ts para evitar un ciclo de
+ * importación (routeStore ya importa de este archivo). */
+export interface HistoryStop {
+  id: string;
+  lat: number;
+  lng: number;
+  label: string;
+  delivered: boolean;
+  legKm?: number;
+}
+
 export interface RouteHistoryRecord {
   id: string;
   label: string;
@@ -22,6 +34,12 @@ export interface RouteHistoryRecord {
   stopsDelivered: number;
   distanceKm: number | null;
   status: "active" | "completed";
+  /** Paradas al momento del último guardado, para la vista de detalle.
+   * Ausente en registros guardados antes de esta función. */
+  stops?: HistoryStop[];
+  /** Geometría de la ruta por calles [lng, lat]; null si fue línea recta. */
+  geometry?: [number, number][] | null;
+  origin?: { lat: number; lng: number } | null;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -93,4 +111,32 @@ export function formatElapsed(ms: number): string {
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
   return h === 0 ? `${m} min` : `${h}h ${m}min`;
+}
+
+/**
+ * Pide al navegador que el origen use almacenamiento "persistente": el
+ * sistema no debería poder borrarlo solo por falta de espacio (a diferencia
+ * del modo "best-effort" por defecto, que sí puede vaciarse sin avisar).
+ * Es una PETICIÓN, no una garantía — algunos navegadores la conceden sola
+ * si la PWA está instalada o el sitio tiene buen uso; otros piden permiso.
+ * Devuelve el estado final (concedido o no).
+ */
+export async function ensurePersistentStorage(): Promise<boolean> {
+  if (!navigator.storage?.persist) return false;
+  try {
+    const already = (await navigator.storage.persisted?.()) ?? false;
+    if (already) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
+export async function isStoragePersisted(): Promise<boolean> {
+  if (!navigator.storage?.persisted) return false;
+  try {
+    return await navigator.storage.persisted();
+  } catch {
+    return false;
+  }
 }

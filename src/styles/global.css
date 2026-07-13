@@ -971,6 +971,120 @@ input {
   color: var(--cono);
 }
 
+.history-storage-note {
+  margin: 0;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 2px solid var(--asfalto-claro);
+  background: var(--asfalto);
+  color: var(--tinta-suave);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ============ Detalle de una ruta guardada ============ */
+.history-detail {
+  max-height: 90dvh;
+}
+
+.history-detail__body {
+  padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-detail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.history-detail__grid dt {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.history-detail__grid dd {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.history-detail__mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-detail .map-wrap {
+  height: 220px;
+  margin: 0;
+}
+
+.history-detail__stops {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.history-detail__stops li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pintura-blanca);
+  border: 2px solid var(--asfalto);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+}
+
+.history-detail__stops li.is-delivered {
+  opacity: 0.7;
+  border-color: var(--senal-verde);
+}
+
+.history-detail__stop-n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pintura);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.history-detail__stops li.is-delivered .history-detail__stop-n {
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+}
+
+.history-detail__stop-label {
+  flex: 1;
+  font-size: 0.88rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-detail__stop-km {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--tinta-suave);
+  flex-shrink: 0;
+}
+
 /* ============ Movimiento reducido ============ */
 @media (prefers-reduced-motion: reduce) {
   .road-list::after {

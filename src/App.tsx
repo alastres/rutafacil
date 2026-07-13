@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { parseAllLocations, parseSharedText } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
+import { ensurePersistentStorage } from "./lib/historyDb";
 import { useRouteStore } from "./state/routeStore";
 import { withLoader } from "./state/loadingStore";
 import { Header } from "./components/Header";
@@ -95,6 +96,12 @@ export default function App() {
     }
     // Solo al cargar la app
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pide almacenamiento persistente para que el navegador no borre el
+  // historial (IndexedDB) automáticamente si necesita liberar espacio.
+  useEffect(() => {
+    void ensurePersistentStorage();
   }, []);
 
   return (

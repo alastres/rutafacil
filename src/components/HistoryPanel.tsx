@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { FaTrash, FaPen, FaClockRotateLeft } from "react-icons/fa6";
+import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
 import { useHistoryStore } from "../state/historyStore";
 import { useRouteStore } from "../state/routeStore";
-import { defaultRouteLabel, formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
+import {
+  defaultRouteLabel,
+  formatElapsed,
+  isStoragePersisted,
+  type RouteHistoryRecord,
+} from "../lib/historyDb";
 import { CloseIcon } from "./icons";
+import { RouteDetailModal } from "./RouteDetailModal";
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleString("es-CO", {
@@ -17,11 +23,16 @@ function formatDate(ts: number): string {
 
 export function HistoryPanel() {
   const [open, setOpen] = useState(false);
+  const [detailRecord, setDetailRecord] = useState<RouteHistoryRecord | null>(null);
+  const [persisted, setPersisted] = useState<boolean | null>(null);
   const records = useHistoryStore((s) => s.records);
   const refresh = useHistoryStore((s) => s.refresh);
 
   useEffect(() => {
-    if (open) void refresh();
+    if (open) {
+      void refresh();
+      void isStoragePersisted().then(setPersisted);
+    }
   }, [open, refresh]);
 
   return (
@@ -61,18 +72,34 @@ export function HistoryPanel() {
             ) : (
               <ul className="history-list">
                 {records.map((r) => (
-                  <HistoryItem key={r.id} record={r} />
+                  <HistoryItem key={r.id} record={r} onViewDetail={() => setDetailRecord(r)} />
                 ))}
               </ul>
             )}
+            {persisted !== null && (
+              <p className="history-storage-note">
+                {persisted
+                  ? "Almacenamiento persistente activado: el navegador no debería borrar este historial por falta de espacio."
+                  : "Almacenamiento no marcado como persistente todavía (algunos navegadores lo conceden solo con la app instalada o de más uso)."}
+              </p>
+            )}
           </div>
         </div>
+      )}
+      {detailRecord && (
+        <RouteDetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />
       )}
     </>
   );
 }
 
-function HistoryItem({ record }: { record: RouteHistoryRecord }) {
+function HistoryItem({
+  record,
+  onViewDetail,
+}: {
+  record: RouteHistoryRecord;
+  onViewDetail: () => void;
+}) {
   const rename = useHistoryStore((s) => s.rename);
   const remove = useHistoryStore((s) => s.remove);
   const refresh = useHistoryStore((s) => s.refresh);
@@ -167,6 +194,13 @@ function HistoryItem({ record }: { record: RouteHistoryRecord }) {
         )}
       </div>
       <div className="history-item__actions">
+        <button
+          className="history-icon-btn"
+          onClick={onViewDetail}
+          aria-label={`Ver detalle de ${record.label}`}
+        >
+          <FaEye size={13} />
+        </button>
         <button
           className="history-icon-btn"
           onClick={() => setEditing(true)}
