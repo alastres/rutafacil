@@ -1,25 +1,11 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { haversineKm, type LatLng } from "../lib/geo";
+import { getPosition, haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
 import { CheckIcon } from "./icons";
-
-function getPosition(): Promise<LatLng> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("sin geolocalización"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => reject(err),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
-    );
-  });
-}
 
 /** Distingue "permiso bloqueado" (hay que ir a ajustes) de un fallo puntual. */
 async function geolocationDenied(): Promise<boolean> {

@@ -18,6 +18,21 @@ export function haversineKm(a: LatLng, b: LatLng): number {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
+/** Posición GPS actual del navegador (una sola lectura, no seguimiento). */
+export function getPosition(): Promise<LatLng> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("sin geolocalización"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => reject(err),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  });
+}
+
 export function isValidLatLng(lat: number, lng: number): boolean {
   return (
     Number.isFinite(lat) &&

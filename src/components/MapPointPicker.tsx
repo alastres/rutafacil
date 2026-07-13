@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { LatLng } from "../lib/geo";
+import { getPosition, type LatLng } from "../lib/geo";
 import { PinIcon } from "./icons";
+
+const FALLBACK_CENTER: LatLng = { lat: 4.6, lng: -74.08 };
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -34,8 +36,11 @@ export function MapPointPicker({
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const centerRef = useRef<LatLng>(initial ?? { lat: 4.6, lng: -74.08 });
+  const centerRef = useRef<LatLng>(initial ?? FALLBACK_CENTER);
   const [, forceRender] = useState(0);
+  // Sin ubicación ya elegida, arranca buscando el GPS del usuario en vez de
+  // dejarlo parado en un punto fijo del mundo.
+  const [locating, setLocating] = useState(!initial);
 
   useEffect(() => {
     if (!container.current) return;
@@ -48,17 +53,46 @@ export function MapPointPicker({
       attributionControl: { compact: true },
     });
     mapRef.current = map;
+    let userMoved = false;
     const onMove = () => {
       const c = map.getCenter();
       centerRef.current = { lat: c.lat, lng: c.lng };
+      setLocating(false);
       forceRender((n) => n + 1);
     };
+    const markUserMoved = () => {
+      userMoved = true;
+    };
     map.on("move", onMove);
+    // Marca el gesto ANTES de que se dispare "move", para que el jumpTo del
+    // GPS (si llega justo después) sepa que ya no debe pisarlo.
+    map.on("dragstart", markUserMoved);
+    map.on("wheel", markUserMoved);
+    map.on("touchstart", markUserMoved);
+
+    if (!initial) {
+      getPosition()
+        .then((pos) => {
+          // Si el mapa ya se desmontó o el usuario ya empezó a moverlo
+          // mientras se resolvía el GPS, no le pisamos el gesto.
+          if (mapRef.current !== map || userMoved) return;
+          centerRef.current = pos;
+          map.jumpTo({ center: [pos.lng, pos.lat] });
+          forceRender((n) => n + 1);
+        })
+        .catch(() => {})
+        .finally(() => setLocating(false));
+    }
+
     return () => {
       map.off("move", onMove);
+      map.off("dragstart", markUserMoved);
+      map.off("wheel", markUserMoved);
+      map.off("touchstart", markUserMoved);
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -68,7 +102,9 @@ export function MapPointPicker({
         <PinIcon size={30} />
       </div>
       <div className="point-picker__coords">
-        {centerRef.current.lat.toFixed(5)}, {centerRef.current.lng.toFixed(5)}
+        {locating
+          ? "Buscando tu ubicación…"
+          : `${centerRef.current.lat.toFixed(5)}, ${centerRef.current.lng.toFixed(5)}`}
       </div>
       <div className="point-picker__actions">
         <button type="button" className="btn btn--ghost" onClick={onCancel}>
