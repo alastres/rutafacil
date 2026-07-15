@@ -21,6 +21,8 @@ export interface Stop {
   legKm?: number;
 }
 
+export const FREE_TIER_LIMIT = 8;
+
 export interface OptimizationResult {
   /** Paradas pendientes en el orden de visita, con legKm calculado */
   ordered: Stop[];
@@ -75,6 +77,11 @@ interface RouteState {
   trackingStartedAt: number | null;
   /** Cuándo se marcó la última entrega pendiente como completada. */
   completedAt: number | null;
+  userTier: "free" | "pro";
+  isSubscribed: boolean;
+  isSubscriptionModalOpen: boolean;
+  setUserTier: (tier: "free" | "pro") => void;
+  setSubscriptionModalOpen: (open: boolean) => void;
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
@@ -183,8 +190,18 @@ export const useRouteStore = create<RouteState>()(
       historyCreatedAt: null,
       trackingStartedAt: null,
       completedAt: null,
+      userTier: "free",
+      isSubscribed: false,
+      isSubscriptionModalOpen: false,
+      setUserTier: (tier) => set({ userTier: tier, isSubscribed: tier === "pro" }),
+      setSubscriptionModalOpen: (open) => set({ isSubscriptionModalOpen: open }),
 
       addStop: (lat, lng, label) => {
+        const { userTier, stops } = get();
+        if (userTier === "free" && stops.length >= FREE_TIER_LIMIT) {
+          set({ isSubscriptionModalOpen: true });
+          return;
+        }
         const now = Date.now();
         const isFresh = get().historyId === null;
         set((s) => ({

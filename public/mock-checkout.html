@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Pasarela de Pagos</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f6f9fc;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .logo-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+    .stripe { background-color: #635bff; }
+    .mercadopago { background-color: #009ee3; }
+    h2 { margin-top: 0; font-size: 1.4rem; color: #1a1f36; }
+    .price-details { background: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0; }
+    .price-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
+    .price-row.total { font-weight: bold; border-top: 1px solid #e9ecef; padding-top: 8px; margin-top: 8px; font-size: 1.1rem; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn-pay { color: white; margin-top: 24px; }
+    .btn-pay-stripe { background-color: #635bff; }
+    .btn-pay-stripe:hover { background-color: #4b44db; }
+    .btn-pay-mp { background-color: #009ee3; }
+    .btn-pay-mp:hover { background-color: #0081ba; }
+    .btn-cancel { background-color: transparent; color: #697386; border: 1px solid #e3e8ee; }
+    .btn-cancel:hover { background-color: #f8f9fa; color: #3c4257; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="badge" class="logo-badge">Pasarela</div>
+    <h2 id="title">Completar Suscripción</h2>
+    <p>Estás simulando la pasarela de pagos en tu entorno de desarrollo local.</p>
+
+    <div class="price-details">
+      <div class="price-row">
+        <span>RutaFácil PRO (Suscripción Mensual)</span>
+        <span>$4.99 USD</span>
+      </div>
+      <div class="price-row total">
+        <span>Total a Pagar</span>
+        <span>$4.99 USD</span>
+      </div>
+    </div>
+
+    <button id="pay-btn" class="btn btn-pay">Pagar Ahora (Simulado)</button>
+    <button id="cancel-btn" class="btn btn-cancel">Cancelar</button>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const provider = params.get('provider') || 'stripe';
+    const returnUrl = params.get('return_url') || '/';
+
+    const badge = document.getElementById('badge');
+    const payBtn = document.getElementById('pay-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    if (provider === 'stripe') {
+      badge.textContent = 'Stripe Checkout';
+      badge.className = 'logo-badge stripe';
+      payBtn.className = 'btn btn-pay btn-pay-stripe';
+    } else {
+      badge.textContent = 'Mercado Pago';
+      badge.className = 'logo-badge mercadopago';
+      payBtn.className = 'btn btn-pay btn-pay-mp';
+    }
+
+    payBtn.addEventListener('click', () => {
+      // Retornar éxito
+      const redirect = provider === 'stripe'
+        ? `${returnUrl}?session_id=mock_success`
+        : `${returnUrl}?status=approved`;
+      window.location.href = redirect;
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      // Retornar cancelación
+      window.location.href = `${returnUrl}?status=cancelled`;
+    });
+  </script>
+</body>
+</html>

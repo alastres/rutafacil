@@ -3,7 +3,7 @@ import { toast } from "react-hot-toast";
 import { useReturnPointsStore } from "../state/returnPointsStore";
 import { useRouteStore } from "../state/routeStore";
 import type { SavedReturnPoint } from "../lib/historyDb";
-import { CloseIcon, PinIcon, PlusIcon } from "./icons";
+import { CloseIcon, PinIcon, PlusIcon, LockIcon } from "./icons";
 import { ReturnPointForm } from "./ReturnPointForm";
 
 let counter = 0;
@@ -16,18 +16,40 @@ export function ReturnPointTrigger({
 }) {
   const [open, setOpen] = useState(false);
   const returnPoint = useRouteStore((s) => s.returnPoint);
+  const userTier = useRouteStore((s) => s.userTier);
+  const setSubscriptionModalOpen = useRouteStore((s) => s.setSubscriptionModalOpen);
+
+  const handleClick = () => {
+    if (userTier === "free") {
+      setSubscriptionModalOpen(true);
+    } else {
+      setOpen(true);
+    }
+  };
 
   return (
     <>
       <button
-        className="return-point-trigger"
-        onClick={() => setOpen(true)}
+        className={`return-point-trigger ${userTier === "free" ? "is-locked" : ""}`}
+        onClick={handleClick}
         aria-label={
-          returnPoint ? `Punto de retorno: ${returnPoint.label}` : "Añadir punto de retorno"
+          userTier === "free"
+            ? "Punto de retorno (Pro)"
+            : returnPoint
+            ? `Punto de retorno: ${returnPoint.label}`
+            : "Añadir punto de retorno"
         }
       >
         <PinIcon size={13} />
-        {returnPoint ? returnPoint.label : "Punto de retorno"}
+        {userTier === "free" ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            Retorno Pro <LockIcon size={10} />
+          </span>
+        ) : returnPoint ? (
+          returnPoint.label
+        ) : (
+          "Punto de retorno"
+        )}
       </button>
       {open && <ReturnPointSheet onClose={() => setOpen(false)} onNotify={onNotify} />}
     </>

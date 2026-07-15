@@ -2,7 +2,7 @@ import { AnimatePresence, motion, Reorder, useDragControls } from "motion/react"
 import { googleMapsNavUrl } from "../lib/nav";
 import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
-import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon, DragHandleIcon } from "./icons";
+import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon, DragHandleIcon, LockIcon } from "./icons";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
@@ -157,11 +157,14 @@ function StopItemDraggable({
   const renameStop = useRouteStore((s) => s.renameStop);
   const removeStop = useRouteStore((s) => s.removeStop);
   const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
+  const userTier = useRouteStore((s) => s.userTier);
+  const setSubscriptionModalOpen = useRouteStore((s) => s.setSubscriptionModalOpen);
   const dragControls = useDragControls();
 
   const classes = [
     "road-item",
     "is-draggable",
+    userTier === "free" ? "is-locked" : "",
     isNext ? "is-next" : "",
   ]
     .filter(Boolean)
@@ -173,7 +176,7 @@ function StopItemDraggable({
       value={stop}
       id={stop.id}
       dragListener={false}
-      dragControls={dragControls}
+      dragControls={userTier === "pro" ? dragControls : undefined}
       className={classes}
       initial={{ opacity: 0, y: 28, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -185,15 +188,26 @@ function StopItemDraggable({
       </span>
       <article className="stop-card stop-card--draggable">
         <div className="stop-card-main">
-          {/* Manillar visual de arrastre */}
-          <div
-            className="drag-handle"
-            onPointerDown={(e) => dragControls.start(e)}
-            title="Arrastrar para cambiar orden"
-            style={{ touchAction: "none" }}
-          >
-            <DragHandleIcon size={14} />
-          </div>
+          {/* Manillar visual de arrastre condicionado por tier */}
+          {userTier === "pro" ? (
+            <div
+              className="drag-handle"
+              onPointerDown={(e) => dragControls.start(e)}
+              title="Arrastrar para cambiar orden"
+              style={{ touchAction: "none" }}
+            >
+              <DragHandleIcon size={14} />
+            </div>
+          ) : (
+            <button
+              className="drag-handle-locked"
+              onClick={() => setSubscriptionModalOpen(true)}
+              title="Suscríbete a Pro para arrastrar y personalizar el orden"
+              type="button"
+            >
+              <LockIcon size={13} />
+            </button>
+          )}
 
           <div className="stop-card-content">
             <div className="stop-eyebrow">

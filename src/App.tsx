@@ -16,12 +16,16 @@ import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { CheckIcon, AlertIcon } from "./components/icons";
+import { SubscriptionModal } from "./components/SubscriptionModal";
 
 const MapView = lazy(() => import("./components/MapView"));
 
 export default function App() {
   const stops = useRouteStore((s) => s.stops);
   const addStop = useRouteStore((s) => s.addStop);
+  const userTier = useRouteStore((s) => s.userTier);
+  const setUserTier = useRouteStore((s) => s.setUserTier);
+  const setSubscriptionModalOpen = useRouteStore((s) => s.setSubscriptionModalOpen);
   const [showMap, setShowMap] = useState(false);
   const [moving, setMoving] = useState(false);
 
@@ -68,11 +72,35 @@ export default function App() {
         return false;
       }
 
-      for (const loc of locations) addStop(loc.lat, loc.lng, loc.label);
+      let locationsToAdd = locations;
+      let truncated = false;
+
+      if (userTier === "free") {
+        const currentStopsCount = stops.length;
+        if (currentStopsCount >= 8) {
+          notify("Límite de paradas alcanzado (máx. 8). ¡Suscríbete a Pro para paradas ilimitadas!", true);
+          setSubscriptionModalOpen(true);
+          return false;
+        }
+        if (currentStopsCount + locations.length > 8) {
+          const allowed = 8 - currentStopsCount;
+          locationsToAdd = locations.slice(0, allowed);
+          truncated = true;
+        }
+      }
+
+      for (const loc of locationsToAdd) addStop(loc.lat, loc.lng, loc.label);
+
+      if (truncated) {
+        notify(`Límite del plan Gratuito alcanzado. Se agregaron solo las primeras ${locationsToAdd.length} ubicaciones. ¡Pásate a Pro para agregar paradas ilimitadas!`, true);
+        setSubscriptionModalOpen(true);
+        return true;
+      }
+
       const added =
-        locations.length === 1
+        locationsToAdd.length === 1
           ? "Parada agregada a la ruta"
-          : `${locations.length} paradas agregadas a la ruta`;
+          : `${locationsToAdd.length} paradas agregadas a la ruta`;
       notify(
         unresolved > 0
           ? `${added} (${unresolved} enlace${unresolved > 1 ? "s" : ""} acortado sin resolver)`
@@ -80,7 +108,7 @@ export default function App() {
       );
       return true;
     },
-    [addStop, notify],
+    [addStop, notify, userTier, stops.length, setSubscriptionModalOpen],
   );
 
   // Entrada por el menú Compartir de Android (share_target del manifest):
@@ -104,6 +132,22 @@ export default function App() {
   useEffect(() => {
     void ensurePersistentStorage();
   }, []);
+
+  // Escuchar parámetros de retorno de pasarelas de pago
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const status = params.get("status");
+
+    if (sessionId === "mock_success" || status === "approved") {
+      setUserTier("pro");
+      notify("¡Gracias por suscribirte a RutaFácil PRO! Acceso Premium activado.");
+      window.history.replaceState(null, "", "/");
+    } else if (status === "cancelled" || status === "failed") {
+      notify("El proceso de pago fue cancelado o falló.", true);
+      window.history.replaceState(null, "", "/");
+    }
+  }, [setUserTier, notify]);
 
   return (
     <ErrorBoundary>
@@ -129,6 +173,7 @@ export default function App() {
         onToggleMap={() => setShowMap((v) => !v)}
       />
       <LiveTracker />
+      <SubscriptionModal />
       <Toaster
         position="bottom-center"
         containerStyle={{ bottom: 92, left: 0, right: 0 }}
