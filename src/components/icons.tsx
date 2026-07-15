@@ -12,6 +12,11 @@ import {
   FaMapPin,
   FaPlus,
   FaGripVertical,
+  FaMap,
+  FaList,
+  FaLocationArrow,
+  FaRoute,
+  FaTrash,
 } from "react-icons/fa6";
 import type { IconBaseProps } from "react-icons";
 
@@ -32,6 +37,11 @@ export const ArrowRightIcon = FaArrowRight;
 export const PinIcon = FaMapPin;
 export const PlusIcon = FaPlus;
 export const DragHandleIcon = FaGripVertical;
+export const MapIcon = FaMap;
+export const ListIcon = FaList;
+export const TrackIcon = FaLocationArrow;
+export const RouteIcon = FaRoute;
+export const TrashIcon = FaTrash;
 
 /** Markup estático del check, para el marcador de mapa creado fuera de React
  * (MapLibre construye esos elementos de forma imperativa, sin árbol de

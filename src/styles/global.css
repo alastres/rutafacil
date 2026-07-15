@@ -396,6 +396,18 @@ input {
   gap: 6px;
 }
 
+@media (max-width: 420px) {
+  .stop-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stop-actions .btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    width: 100%;
+  }
+}
+
 .btn-nav {
   background: var(--pintura);
   color: var(--asfalto);
@@ -541,61 +553,63 @@ input {
   width: 100%;
   max-width: 480px;
   background: var(--asfalto);
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   display: flex;
-  gap: 10px;
-  align-items: center;
+  gap: 8px;
+  align-items: stretch;
   z-index: 20;
 }
 
-.btn-optimize {
+.bottom-bar-btn {
   flex: 1;
-  background: var(--pintura);
-  color: var(--asfalto);
-  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   border-radius: var(--radius);
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.05rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 14px;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid var(--asfalto-claro);
+  background: transparent;
+  color: var(--pintura-blanca);
+  min-height: 52px;
 }
 
-.btn-optimize:disabled {
-  opacity: 0.45;
+.bottom-bar-btn .btn-label {
+  display: block;
+}
+
+.bottom-bar-btn.btn-optimize {
+  background: var(--pintura);
+  border-color: var(--pintura);
+  color: var(--asfalto);
+  font-weight: 900;
+}
+
+.bottom-bar-btn.btn-optimize:disabled {
+  background: var(--asfalto-claro);
+  border-color: var(--asfalto-claro);
+  color: var(--tinta-suave);
+  opacity: 0.5;
   cursor: default;
 }
 
-.btn-clear,
-.btn-map {
-  background: transparent;
-  color: var(--pintura-blanca);
-  border: 2px solid var(--asfalto-claro);
-  border-radius: var(--radius);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  padding: 12px 10px;
-}
-
-.btn-track {
-  background: transparent;
-  color: var(--pintura-blanca);
-  border: 2px solid var(--asfalto-claro);
-  border-radius: var(--radius);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  padding: 12px 10px;
-}
-
-.btn-track.is-on {
+.bottom-bar-btn.btn-track.is-on {
   background: var(--senal-verde);
   border-color: var(--senal-verde);
   color: var(--pintura-blanca);
+}
+
+.bottom-bar-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* Marcador de posición en vivo: pulso para distinguirlo del origen */

@@ -5,7 +5,7 @@ import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
-import { CheckIcon } from "./icons";
+import { CheckIcon, MapIcon, ListIcon, TrackIcon, RouteIcon, TrashIcon } from "./icons";
 
 /** Distingue "permiso bloqueado" (hay que ir a ajustes) de un fallo puntual. */
 async function geolocationDenied(): Promise<boolean> {
@@ -163,26 +163,31 @@ export function OptimizeBar({
 
   return (
     <div className="bottom-bar">
-      <button className="btn-map" onClick={onToggleMap}>
-        {showMap ? "Lista" : "Mapa"}
+      <button className="btn-map bottom-bar-btn" onClick={onToggleMap} title={showMap ? "Ver Lista" : "Ver Mapa"}>
+        {showMap ? <ListIcon size={18} /> : <MapIcon size={18} />}
+        <span className="btn-label">{showMap ? "Lista" : "Mapa"}</span>
       </button>
       <button
-        className={`btn-track${tracking ? " is-on" : ""}`}
+        className={`btn-track bottom-bar-btn${tracking ? " is-on" : ""}`}
         onClick={() => (tracking ? stopTracking() : startTracking())}
         disabled={busy || optimizedKm === null}
         title="Seguir mi ubicación en tiempo real y recalcular si me desvío"
       >
-        {tracking ? "Parar" : "Seguir"}
+        <TrackIcon size={18} />
+        <span className="btn-label">{tracking ? "Parar" : "Seguir"}</span>
       </button>
       <button
-        className="btn-optimize"
+        className="btn-optimize bottom-bar-btn"
         onClick={handleOptimize}
         disabled={busy || pending.length < 2}
+        title="Calcular ruta óptima"
       >
-        {busy ? "Calculando…" : "Armar ruta"}
+        <RouteIcon size={18} />
+        <span className="btn-label">{busy ? "Calculando" : "Armar"}</span>
       </button>
-      <button className="btn-clear" onClick={handleClear}>
-        Nueva
+      <button className="btn-clear bottom-bar-btn" onClick={handleClear} title="Nueva ruta">
+        <TrashIcon size={18} />
+        <span className="btn-label">Nueva</span>
       </button>
     </div>
   );
