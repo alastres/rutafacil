@@ -1352,3 +1352,97 @@ input {
     animation-duration: 0.01ms !important;
   }
 }
+/* ============ Banner de Instalación PWA ============ */
+.install-banner {
+  position: fixed;
+  bottom: 86px;
+  left: 12px;
+  right: 12px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border: 2px solid var(--pintura);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  gap: 12px;
+  max-width: 456px;
+  margin: 0 auto;
+}
+
+.install-banner--ios {
+  border-color: var(--tinta-clara);
+}
+
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.install-icon {
+  font-size: 1.5rem;
+}
+
+.install-text h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  color: var(--pintura);
+}
+
+.install-banner--ios .install-text h4 {
+  color: var(--pintura-blanca);
+}
+
+.install-text p {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--tinta-clara);
+  line-height: 1.3;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-install-confirm {
+  background: var(--pintura);
+  color: var(--asfalto);
+  border: 1.5px solid var(--asfalto);
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+.btn-install-confirm:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.btn-install-close {
+  background: transparent;
+  border: none;
+  color: var(--tinta-clara);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.btn-install-close:hover {
+  color: var(--pintura-blanca);
+}

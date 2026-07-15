@@ -16,6 +16,8 @@ import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { CheckIcon, AlertIcon } from "./components/icons";
+import { PWAInstallBanner } from "./components/PWAInstallBanner";
+
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -129,6 +131,8 @@ export default function App() {
         onToggleMap={() => setShowMap((v) => !v)}
       />
       <LiveTracker />
+      <PWAInstallBanner />
+
       <Toaster
         position="bottom-center"
         containerStyle={{ bottom: 92, left: 0, right: 0 }}
