@@ -1,6 +1,11 @@
 import { motion } from "motion/react";
+import { useRouteStore } from "../state/routeStore";
+import { CrownIcon } from "./icons";
 
 export function EmptyState() {
+  const userTier = useRouteStore((s) => s.userTier);
+  const setSubscriptionModalOpen = useRouteStore((s) => s.setSubscriptionModalOpen);
+
   return (
     <section className="empty">
       <motion.div
@@ -32,6 +37,22 @@ export function EmptyState() {
           </motion.li>
         ))}
       </ol>
+
+      {userTier === "free" && (
+        <motion.div
+          className="pro-promo-card"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+          onClick={() => setSubscriptionModalOpen(true)}
+        >
+          <div className="pro-promo-header">
+            <CrownIcon size={14} className="crown-premium" style={{ color: "var(--pintura)" }} />
+            <h3>RutaFácil PRO</h3>
+          </div>
+          <p>Plan gratuito limitado a 8 paradas por ruta. ¡Suscríbete a PRO para paradas ilimitadas, reordenamiento por arrastre y punto de retorno!</p>
+        </motion.div>
+      )}
     </section>
   );
 }

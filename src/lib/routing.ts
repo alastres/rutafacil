@@ -21,7 +21,7 @@ import { optimizeOrder } from "./tsp";
  */
 const envBase = (import.meta.env.VITE_OSRM_BASE as string | undefined)?.trim();
 
-const ROUTING_PROVIDER: "osrm" | "mapbox" =
+export const ROUTING_PROVIDER: "osrm" | "mapbox" =
   (import.meta.env.VITE_ROUTING_PROVIDER as "osrm" | "mapbox") || "osrm";
 const MAPBOX_KEY = import.meta.env.VITE_MAPBOX_KEY as string | undefined;
 const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
@@ -30,7 +30,7 @@ const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_KEY as string | undefined;
 export type TransportMode = "car" | "motorbike" | "bike" | "foot";
 
 /** Perfil OSRM equivalente a cada modo. */
-const OSRM_PROFILE: Record<TransportMode, string> = {
+export const OSRM_PROFILE: Record<TransportMode, string> = {
   car: "driving",
   motorbike: "driving",
   bike: "bicycle",
@@ -38,7 +38,7 @@ const OSRM_PROFILE: Record<TransportMode, string> = {
 };
 
 /** Perfil de Mapbox Directions equivalente a cada modo. */
-const MAPBOX_PROFILE: Record<TransportMode, string> = {
+export const MAPBOX_PROFILE: Record<TransportMode, string> = {
   car: "driving",
   motorbike: "driving",
   bike: "cycling",
@@ -57,7 +57,7 @@ const GIS_SUBDOMAIN: Record<TransportMode, string> = {
  * Servidores OSRM por perfil. El demo (router.project-osrm.org) soporta todos
  * los perfiles en el mismo endpoint; GIScience tiene subdominios por modo.
  */
-function osrmBasesFor(mode: TransportMode): string[] {
+export function osrmBasesFor(mode: TransportMode): string[] {
   const gis = `https://routing.openstreetmap.de/${GIS_SUBDOMAIN[mode]}`;
   const bases = [gis, "https://router.project-osrm.org"];
   return envBase ? [envBase, ...bases] : bases;
@@ -102,7 +102,7 @@ interface MapboxResponse {
 }
 
 /** Intenta resolver el viaje en un único servidor; null si falla o no es válido. */
-async function tryBase(
+export async function tryBase(
   base: string,
   origin: LatLng,
   stops: LatLng[],
@@ -159,7 +159,7 @@ async function tryBase(
   }
 }
 
-async function tryRouteBase(
+export async function tryRouteBase(
   base: string,
   origin: LatLng,
   stops: LatLng[],
@@ -208,7 +208,7 @@ async function tryRouteBase(
  * con haversine (optimizeOrder) y luego pedimos la geometría + duraciones
  * (congestionadas) en ese orden. Si no hay llave, devuelve null y se usa OSRM.
  */
-async function tripMapbox(
+export async function tripMapbox(
   origin: LatLng,
   stops: LatLng[],
   timeoutMs: number,
@@ -267,26 +267,58 @@ export async function tripThroughStreets(
   const { timeoutMs = 12000, mode = "car", returnPoint, optimize = true } = opts;
   if (stops.length === 0) return null;
 
-  const profile = OSRM_PROFILE[mode];
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("rutafacil_jwt") : null;
 
-  if (ROUTING_PROVIDER === "mapbox") {
-    const viaMapbox = await tripMapbox(
-      origin,
-      stops,
-      timeoutMs,
-      MAPBOX_PROFILE[mode],
-      returnPoint,
-      optimize,
-    );
-    if (viaMapbox) return viaMapbox;
-    // Sin llave válida o fallo → cae a OSRM gratis
-  }
+  try {
+    const res = await fetch("/api/route", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ origin, stops, mode, returnPoint, optimize, timeoutMs }),
+    });
 
-  for (const base of osrmBasesFor(mode)) {
-    const result = optimize
-      ? await tryBase(base, origin, stops, timeoutMs, profile, returnPoint)
-      : await tryRouteBase(base, origin, stops, timeoutMs, profile, returnPoint);
-    if (result) return result;
+    if (res.ok) {
+      return (await res.json()) as TripResult;
+    }
+    
+    if (res.status === 403) {
+      const errData = (await res.json()) as { error: string };
+      throw new Error(errData.error || "Límite del plan gratuito excedido.");
+    }
+  } catch (err) {
+    console.error("Fallo de ruteo seguro en backend:", err);
+    // Fallback local si el backend no está disponible en desarrollo (npm run dev sin Vercel)
+    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      console.log("Usando fallback de ruteo local en desarrollo...");
+      
+      let isPro = false;
+      if (token && token.startsWith("header.")) {
+        try {
+          const payloadStr = atob(token.split(".")[1]);
+          const payload = JSON.parse(payloadStr);
+          isPro = payload.tier === "pro";
+        } catch {}
+      }
+      
+      if (!isPro) {
+        if (stops.length > 8) {
+          throw new Error("Límite del plan Gratuito alcanzado (máx. 8 paradas). Suscríbete a PRO.");
+        }
+        if (returnPoint) {
+          throw new Error("El punto de retorno es una característica exclusiva del plan PRO.");
+        }
+      }
+      
+      const profile = OSRM_PROFILE[mode];
+      for (const base of osrmBasesFor(mode)) {
+        const result = optimize
+          ? await tryBase(base, origin, stops, timeoutMs, profile, returnPoint)
+          : await tryRouteBase(base, origin, stops, timeoutMs, profile, returnPoint);
+        if (result) return result;
+      }
+    }
   }
   return null;
 }

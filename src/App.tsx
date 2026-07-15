@@ -17,6 +17,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { CheckIcon, AlertIcon } from "./components/icons";
 import { SubscriptionModal } from "./components/SubscriptionModal";
+import { AuthModal } from "./components/AuthModal";
+import { OnboardingTutorial } from "./components/OnboardingTutorial";
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -149,6 +151,44 @@ export default function App() {
     }
   }, [setUserTier, notify]);
 
+  // Validación silenciosa del JWT y la Suscripción al arrancar
+  useEffect(() => {
+    const token = localStorage.getItem("rutafacil_jwt");
+    if (!token) return;
+
+    fetch("/api/subscription-status", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data: any) => {
+        if (data.isSubscribed) {
+          // El token sigue siendo válido y es PRO
+          useRouteStore.getState().loginUser(data.email || "", token, "pro");
+        } else {
+          // Degradación si la suscripción de Stripe venció/canceló o es free
+          useRouteStore.getState().loginUser(data.email || "", token, "free");
+        }
+      })
+      .catch(() => {
+        // Fallback de desarrollo para JWT simulados
+        if ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && token?.startsWith("header.")) {
+          try {
+            const payloadStr = atob(token.split(".")[1]);
+            const payload = JSON.parse(payloadStr);
+            useRouteStore.getState().loginUser(payload.email || "", token, payload.tier || "free");
+          } catch {
+            useRouteStore.getState().logoutUser();
+          }
+        } else {
+          // Si el token es inválido o expiró
+          useRouteStore.getState().logoutUser();
+        }
+      });
+  }, []);
+
   return (
     <ErrorBoundary>
       <GlobalLoader />
@@ -174,6 +214,8 @@ export default function App() {
       />
       <LiveTracker />
       <SubscriptionModal />
+      <AuthModal />
+      <OnboardingTutorial />
       <Toaster
         position="bottom-center"
         containerStyle={{ bottom: 92, left: 0, right: 0 }}

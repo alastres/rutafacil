@@ -19,6 +19,7 @@ import {
   FaTrash,
   FaLock,
   FaCrown,
+  FaWhatsapp,
 } from "react-icons/fa6";
 import type { IconBaseProps } from "react-icons";
 
@@ -46,6 +47,7 @@ export const RouteIcon = FaRoute;
 export const TrashIcon = FaTrash;
 export const LockIcon = FaLock;
 export const CrownIcon = FaCrown;
+export const WhatsappIcon = FaWhatsapp;
 
 /** Markup estático del check, para el marcador de mapa creado fuera de React
  * (MapLibre construye esos elementos de forma imperativa, sin árbol de

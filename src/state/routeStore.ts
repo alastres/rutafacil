@@ -80,6 +80,14 @@ interface RouteState {
   userTier: "free" | "pro";
   isSubscribed: boolean;
   isSubscriptionModalOpen: boolean;
+  userEmail: string | null;
+  jwtToken: string | null;
+  isAuthModalOpen: boolean;
+  hasSeenTutorial: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+  setHasSeenTutorial: (seen: boolean) => void;
+  loginUser: (email: string, token: string, tier: "free" | "pro") => void;
+  logoutUser: () => void;
   setUserTier: (tier: "free" | "pro") => void;
   setSubscriptionModalOpen: (open: boolean) => void;
   addStop: (lat: number, lng: number, label?: string) => void;
@@ -193,6 +201,30 @@ export const useRouteStore = create<RouteState>()(
       userTier: "free",
       isSubscribed: false,
       isSubscriptionModalOpen: false,
+      userEmail: null,
+      jwtToken: null,
+      isAuthModalOpen: false,
+      hasSeenTutorial: false,
+      setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+      setHasSeenTutorial: (seen) => set({ hasSeenTutorial: seen }),
+      loginUser: (email, token, tier) => {
+        set({
+          userEmail: email,
+          jwtToken: token,
+          userTier: tier,
+          isSubscribed: tier === "pro",
+        });
+        localStorage.setItem("rutafacil_jwt", token);
+      },
+      logoutUser: () => {
+        set({
+          userEmail: null,
+          jwtToken: null,
+          userTier: "free",
+          isSubscribed: false,
+        });
+        localStorage.removeItem("rutafacil_jwt");
+      },
       setUserTier: (tier) => set({ userTier: tier, isSubscribed: tier === "pro" }),
       setSubscriptionModalOpen: (open) => set({ isSubscriptionModalOpen: open }),
 

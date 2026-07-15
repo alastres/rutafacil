@@ -1,16 +1,21 @@
-export default function handler(req, res) {
-  const { session_id, status } = req.query;
+const jwt = require('./_jwt');
 
-  if (session_id === 'mock_success' || status === 'approved') {
-    return res.status(200).json({
-      isSubscribed: true,
-      tier: 'pro',
-      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000
-    });
+export default function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(200).json({ isSubscribed: false, tier: 'free' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const payload = jwt.verify(token);
+
+  if (!payload) {
+    return res.status(200).json({ isSubscribed: false, tier: 'free', error: 'Token inválido.' });
   }
 
   return res.status(200).json({
-    isSubscribed: false,
-    tier: 'free'
+    isSubscribed: payload.tier === 'pro',
+    tier: payload.tier,
+    email: payload.email
   });
 }
