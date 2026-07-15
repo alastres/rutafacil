@@ -19,6 +19,7 @@ import { CheckIcon, AlertIcon } from "./components/icons";
 import { SubscriptionModal } from "./components/SubscriptionModal";
 import { AuthModal } from "./components/AuthModal";
 import { OnboardingTutorial } from "./components/OnboardingTutorial";
+import { PWAInstallBanner } from "./components/PWAInstallBanner";
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -216,6 +217,7 @@ export default function App() {
       <SubscriptionModal />
       <AuthModal />
       <OnboardingTutorial />
+      <PWAInstallBanner />
       <Toaster
         position="bottom-center"
         containerStyle={{ bottom: 92, left: 0, right: 0 }}
