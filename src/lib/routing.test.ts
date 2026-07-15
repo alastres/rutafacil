@@ -68,4 +68,39 @@ describe("tripThroughStreets — punto de retorno", () => {
     expect(capturedUrl.split(";").length).toBe(3);
     expect(result?.returnLegKm).toBeUndefined();
   });
+
+  it("con optimize = false, usa el endpoint /route/v1 y no reordena las paradas", async () => {
+    let capturedUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        capturedUrl = url;
+        return {
+          ok: true,
+          json: async () => ({
+            code: "Ok",
+            routes: [
+              {
+                distance: 3000,
+                duration: 600,
+                geometry: { coordinates: [[-74.08, 4.6]] },
+                legs: [
+                  { distance: 1000, duration: 200 },
+                  { distance: 2000, duration: 400 },
+                ],
+              },
+            ],
+          }),
+        };
+      }),
+    );
+
+    const result = await tripThroughStreets(origin, stops, { optimize: false });
+
+    expect(capturedUrl).toContain("/route/v1/");
+    expect(capturedUrl).not.toContain("/trip/v1/");
+    expect(result?.order).toEqual([0, 1]);
+    expect(result?.legsKm).toEqual([1, 2]);
+    expect(result?.distanceKm).toBe(3);
+  });
 });

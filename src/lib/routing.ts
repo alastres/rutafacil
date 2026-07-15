@@ -159,6 +159,49 @@ async function tryBase(
   }
 }
 
+async function tryRouteBase(
+  base: string,
+  origin: LatLng,
+  stops: LatLng[],
+  timeoutMs: number,
+  profile: string,
+  returnPoint?: LatLng,
+): Promise<TripResult | null> {
+  const allPoints = returnPoint ? [origin, ...stops, returnPoint] : [origin, ...stops];
+  const coords = allPoints.map((p) => `${p.lng},${p.lat}`).join(";");
+  const url = `${base}/route/v1/${profile}/${coords}?geometries=geojson&overview=full`;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const route = data.routes?.[0];
+    if (data.code !== "Ok" || !route) return null;
+
+    const order = stops.map((_, i) => i);
+    const legsKm = stops.map((_, i) => (route.legs[i] ? route.legs[i].distance / 1000 : 0));
+    const returnLegKm = returnPoint
+      ? route.legs[route.legs.length - 1].distance / 1000
+      : undefined;
+
+    return {
+      order,
+      legsKm,
+      distanceKm: route.distance / 1000,
+      durationMin: route.duration / 60,
+      coordinates: route.geometry.coordinates,
+      source: base,
+      returnLegKm,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Ruteo con tráfico en vivo vía Mapbox Directions (geojson, igual que OSRM).
  * Mapbox NO reordena waypoints, así que primero calculamos el orden óptimo
@@ -171,9 +214,12 @@ async function tripMapbox(
   timeoutMs: number,
   profile: string,
   returnPoint?: LatLng,
+  optimize = true,
 ): Promise<TripResult | null> {
   if (!MAPBOX_KEY) return null;
-  const order = optimizeOrder(origin, stops, returnPoint);
+  const order = optimize
+    ? optimizeOrder(origin, stops, returnPoint)
+    : stops.map((_, i) => i);
   const sequence = returnPoint
     ? [origin, ...order.map((i) => stops[i]), returnPoint]
     : [origin, ...order.map((i) => stops[i])];
@@ -216,9 +262,9 @@ async function tripMapbox(
 export async function tripThroughStreets(
   origin: LatLng,
   stops: LatLng[],
-  opts: { timeoutMs?: number; mode?: TransportMode; returnPoint?: LatLng } = {},
+  opts: { timeoutMs?: number; mode?: TransportMode; returnPoint?: LatLng; optimize?: boolean } = {},
 ): Promise<TripResult | null> {
-  const { timeoutMs = 12000, mode = "car", returnPoint } = opts;
+  const { timeoutMs = 12000, mode = "car", returnPoint, optimize = true } = opts;
   if (stops.length === 0) return null;
 
   const profile = OSRM_PROFILE[mode];
@@ -230,13 +276,16 @@ export async function tripThroughStreets(
       timeoutMs,
       MAPBOX_PROFILE[mode],
       returnPoint,
+      optimize,
     );
     if (viaMapbox) return viaMapbox;
     // Sin llave válida o fallo → cae a OSRM gratis
   }
 
   for (const base of osrmBasesFor(mode)) {
-    const result = await tryBase(base, origin, stops, timeoutMs, profile, returnPoint);
+    const result = optimize
+      ? await tryBase(base, origin, stops, timeoutMs, profile, returnPoint)
+      : await tryRouteBase(base, origin, stops, timeoutMs, profile, returnPoint);
     if (result) return result;
   }
   return null;

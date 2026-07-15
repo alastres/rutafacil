@@ -78,6 +78,7 @@ interface RouteState {
   addStop: (lat: number, lng: number, label?: string) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
+  reorderStops: (newPendingStops: Stop[]) => void;
   toggleDelivered: (id: string) => void;
   clearRoute: () => void;
   setReturnPoint: (
@@ -236,6 +237,77 @@ export const useRouteStore = create<RouteState>()(
         set((s) => ({
           stops: s.stops.map((st) => (st.id === id ? { ...st, label } : st)),
         }));
+        syncHistory(get());
+      },
+
+      reorderStops: async (newPendingStops) => {
+        const done = get().stops.filter((s) => s.delivered);
+        const updatedStops = [...done, ...newPendingStops];
+
+        // Si la ruta aún no ha sido optimizada, no hay kilómetros ni trazo en mapa.
+        // Solo guardamos el nuevo orden de paradas y sincronizamos el historial.
+        if (get().optimizedKm === null) {
+          set({ stops: updatedStops });
+          syncHistory(get());
+          return;
+        }
+
+        // Si la ruta ya estaba optimizada, recalculamos estadísticas y geometría
+        const origin = get().origin ?? updatedStops[0];
+        const returnPoint = get().returnPoint ?? undefined;
+        const mode = get().mode;
+
+        if (get().byStreets) {
+          const version = get().beginRouteRequest();
+          const trip = await tripThroughStreets(origin, newPendingStops, {
+            mode,
+            returnPoint,
+            optimize: false,
+          });
+
+          if (trip) {
+            const ordered = trip.order.map((i, idx) => ({
+              ...newPendingStops[i],
+              legKm: trip.legsKm[idx],
+            }));
+            get().applyOptimization(
+              {
+                ordered,
+                origin,
+                km: trip.distanceKm,
+                durationMin: trip.durationMin,
+                geometry: trip.coordinates,
+                byStreets: true,
+                returnLegKm: trip.returnLegKm ?? null,
+              },
+              version,
+            );
+            return;
+          }
+        }
+
+        // Respaldo en línea recta si no era por calles o si el OSRM falló
+        let prev: LatLng = origin;
+        const ordered = newPendingStops.map((stop) => {
+          const newStop = { ...stop, legKm: haversineKm(prev, stop) };
+          prev = stop;
+          return newStop;
+        });
+        let km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+        let returnLegKm: number | null = null;
+        if (returnPoint) {
+          returnLegKm = haversineKm(prev, returnPoint);
+          km += returnLegKm;
+        }
+
+        set({
+          stops: [...done, ...ordered],
+          optimizedKm: km,
+          durationMin: null,
+          geometry: null,
+          byStreets: false,
+          returnLegKm,
+        });
         syncHistory(get());
       },
 

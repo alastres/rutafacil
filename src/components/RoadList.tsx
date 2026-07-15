@@ -1,11 +1,12 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, Reorder, useDragControls } from "motion/react";
 import { googleMapsNavUrl } from "../lib/nav";
 import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
-import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon } from "./icons";
+import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon, DragHandleIcon } from "./icons";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
+  const reorderStops = useRouteStore((s) => s.reorderStops);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
   const byStreets = useRouteStore((s) => s.byStreets);
   const origin = useRouteStore((s) => s.origin);
@@ -16,6 +17,9 @@ export function RoadList({ moving }: { moving: boolean }) {
   const nextStop = stops.find((s) => !s.delivered);
   const nextId = nextStop?.id;
 
+  const doneStops = stops.filter((s) => s.delivered);
+  const pendingStops = stops.filter((s) => !s.delivered);
+
   // Distancia/ETA en vivo desde la posición GPS al siguiente punto
   let liveInfo: string | null = null;
   if (live && nextStop) {
@@ -25,9 +29,9 @@ export function RoadList({ moving }: { moving: boolean }) {
   }
 
   return (
-    <ol className={`road-list${moving ? " is-moving" : ""}`}>
+    <div className={`road-list${moving ? " is-moving" : ""}`}>
       {optimized && origin && (
-        <li className="road-item road-origin" aria-label="Punto de partida">
+        <div className="road-item road-origin" aria-label="Punto de partida">
           <span className="marker marker-origin" aria-hidden="true">
             TÚ
           </span>
@@ -42,21 +46,43 @@ export function RoadList({ moving }: { moving: boolean }) {
               </>
             )}
           </div>
-        </li>
+        </div>
       )}
+
       <AnimatePresence initial={false}>
-        {stops.map((stop, i) => (
+        {/* 1. Paradas entregadas (estáticas) */}
+        {doneStops.map((stop, i) => (
           <StopItem
             key={stop.id}
             stop={stop}
             position={i + 1}
-            isNext={stop.id === nextId && optimized}
-            legKm={optimized ? stop.legKm : undefined}
           />
         ))}
       </AnimatePresence>
+
+      {/* 2. Paradas pendientes (arrastrables) */}
+      {pendingStops.length > 0 && (
+        <Reorder.Group
+          axis="y"
+          values={pendingStops}
+          onReorder={reorderStops}
+          className="road-list-pending"
+          as="div"
+        >
+          {pendingStops.map((stop, j) => (
+            <StopItemDraggable
+              key={stop.id}
+              stop={stop}
+              position={doneStops.length + j + 1}
+              isNext={stop.id === nextId && optimized}
+              legKm={optimized ? stop.legKm : undefined}
+            />
+          ))}
+        </Reorder.Group>
+      )}
+
       {returnPoint && (
-        <li className="road-item road-return" aria-label="Punto de retorno">
+        <div className="road-item road-return" aria-label="Punto de retorno">
           <span className="marker marker-return" aria-hidden="true">
             <PinIcon size={13} />
           </span>
@@ -64,13 +90,60 @@ export function RoadList({ moving }: { moving: boolean }) {
             Punto de retorno · {returnPoint.label}
             {optimized && returnLegKm !== null && ` · +${returnLegKm.toFixed(1)} km`}
           </div>
-        </li>
+        </div>
       )}
-    </ol>
+    </div>
   );
 }
 
+/** Componente para paradas ya entregadas (estático, sin arrastre) */
 function StopItem({
+  stop,
+  position,
+}: {
+  stop: Stop;
+  position: number;
+}) {
+  const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
+
+  return (
+    <motion.div
+      layout
+      className="road-item is-delivered"
+      initial={{ opacity: 0, y: 28, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 80, transition: { duration: 0.18 } }}
+      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+    >
+      <span className="marker" aria-hidden="true">
+        <CheckIcon width={16} height={16} />
+      </span>
+      <article className="stop-card">
+        <div className="stop-eyebrow">
+          <span>Parada {position}</span>
+        </div>
+        <div className="stop-row">
+          <span className="stop-label stop-label--delivered">{stop.label}</span>
+        </div>
+        <motion.button
+          className="stamp"
+          style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={() => toggleDelivered(stop.id)}
+          initial={{ scale: 2.4, opacity: 0, rotate: -20 }}
+          animate={{ scale: 1, opacity: 1, rotate: -8 }}
+          transition={{ type: "spring", stiffness: 400, damping: 16 }}
+          title="Tocar para deshacer"
+        >
+          <CheckIcon width={13} height={13} />
+          Entregado
+        </motion.button>
+      </article>
+    </motion.div>
+  );
+}
+
+/** Componente para paradas pendientes (arrastrables) */
+function StopItemDraggable({
   stop,
   position,
   isNext,
@@ -84,18 +157,23 @@ function StopItem({
   const renameStop = useRouteStore((s) => s.renameStop);
   const removeStop = useRouteStore((s) => s.removeStop);
   const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
+  const dragControls = useDragControls();
 
   const classes = [
     "road-item",
-    stop.delivered ? "is-delivered" : "",
+    "is-draggable",
     isNext ? "is-next" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <motion.li
-      layout
+    <Reorder.Item
+      as="div"
+      value={stop}
+      id={stop.id}
+      dragListener={false}
+      dragControls={dragControls}
       className={classes}
       initial={{ opacity: 0, y: 28, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -103,65 +181,63 @@ function StopItem({
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
     >
       <span className="marker" aria-hidden="true">
-        {stop.delivered ? <CheckIcon width={16} height={16} /> : position}
+        {position}
       </span>
-      <article className="stop-card">
-        <div className="stop-eyebrow">
-          {isNext ? <strong>Siguiente</strong> : <span>Parada {position}</span>}
-          {legKm !== undefined && !stop.delivered && (
-            <span>+{legKm.toFixed(1)} km</span>
-          )}
-        </div>
-        <div className="stop-row">
-          <input
-            className="stop-label"
-            value={stop.label}
-            onChange={(e) => renameStop(stop.id, e.target.value)}
-            aria-label={`Nombre de la parada ${position}`}
-          />
-          <button
-            className="stop-remove"
-            onClick={() => removeStop(stop.id)}
-            aria-label={`Quitar ${stop.label}`}
+      <article className="stop-card stop-card--draggable">
+        <div className="stop-card-main">
+          {/* Manillar visual de arrastre */}
+          <div
+            className="drag-handle"
+            onPointerDown={(e) => dragControls.start(e)}
+            title="Arrastrar para cambiar orden"
+            style={{ touchAction: "none" }}
           >
-            <CloseIcon width={14} height={14} />
-          </button>
-        </div>
-        {!stop.delivered && (
-          <div className="stop-actions">
-            <a
-              className="btn btn-nav"
-              href={googleMapsNavUrl(stop)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Navegar
-              <ArrowRightIcon width={15} height={15} />
-            </a>
-            <button
-              className="btn btn-done"
-              onClick={() => toggleDelivered(stop.id)}
-            >
-              Entregada
-              <CheckIcon width={15} height={15} />
-            </button>
+            <DragHandleIcon size={14} />
           </div>
-        )}
-        {stop.delivered && (
-          <motion.button
-            className="stamp"
-            style={{ pointerEvents: "auto", cursor: "pointer" }}
-            onClick={() => toggleDelivered(stop.id)}
-            initial={{ scale: 2.4, opacity: 0, rotate: -20 }}
-            animate={{ scale: 1, opacity: 1, rotate: -8 }}
-            transition={{ type: "spring", stiffness: 400, damping: 16 }}
-            title="Tocar para deshacer"
-          >
-            <CheckIcon width={13} height={13} />
-            Entregado
-          </motion.button>
-        )}
+
+          <div className="stop-card-content">
+            <div className="stop-eyebrow">
+              {isNext ? <strong>Siguiente</strong> : <span>Parada {position}</span>}
+              {legKm !== undefined && (
+                <span>+{legKm.toFixed(1)} km</span>
+              )}
+            </div>
+            <div className="stop-row">
+              <input
+                className="stop-label"
+                value={stop.label}
+                onChange={(e) => renameStop(stop.id, e.target.value)}
+                aria-label={`Nombre de la parada ${position}`}
+              />
+              <button
+                className="stop-remove"
+                onClick={() => removeStop(stop.id)}
+                aria-label={`Quitar ${stop.label}`}
+              >
+                <CloseIcon width={14} height={14} />
+              </button>
+            </div>
+            <div className="stop-actions">
+              <a
+                className="btn btn-nav"
+                href={googleMapsNavUrl(stop)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Navegar
+                <ArrowRightIcon width={15} height={15} />
+              </a>
+              <button
+                className="btn btn-done"
+                onClick={() => toggleDelivered(stop.id)}
+              >
+                Entregada
+                <CheckIcon width={15} height={15} />
+              </button>
+            </div>
+          </div>
+        </div>
       </article>
-    </motion.li>
+    </Reorder.Item>
   );
 }
