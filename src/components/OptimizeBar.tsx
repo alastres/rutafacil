@@ -178,7 +178,7 @@ export function OptimizeBar({
       <button
         className="btn-optimize bottom-bar-btn"
         onClick={handleOptimize}
-        disabled={busy || pending.length < 2}
+        disabled={busy || pending.length === 0}
         title="Calcular ruta óptima"
       >
         <RouteIcon size={18} />

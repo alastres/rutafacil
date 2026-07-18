@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
 import { tripThroughStreets } from "../lib/routing";
-import { distanceToPolylineKm, type LatLng } from "../lib/geo";
+import { distanceToPolylineKm, haversineKm, type LatLng } from "../lib/geo";
 import { showToast } from "../lib/toast";
 import { AlertIcon, CheckIcon } from "./icons";
+import { triggerArrivalNotification } from "../lib/notification";
 
 /** A partir de qué desviación (m) se recalcula la ruta */
 const DEVIATION_M = 60;
@@ -57,6 +58,17 @@ export function LiveTracker() {
 
         const { geometry, stops } = store;
         const pending = stops.filter((s) => !s.delivered);
+
+        // Notificar si llegamos a la siguiente parada (menos de 50 metros)
+        if (pending.length > 0) {
+          const nextStop = pending[0];
+          const distKm = haversineKm(p, nextStop);
+          const distM = distKm * 1000;
+          if (distM < 50) {
+            void triggerArrivalNotification(nextStop);
+          }
+        }
+
         if (geometry && pending.length > 0 && !rerouting) {
           const devM = distanceToPolylineKm(p, geometry) * 1000;
           const now = Date.now();

@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
+import PushPermissionRequester from "./components/PushPermissionRequester";
+import BackSwipeHandler from "./components/BackSwipeHandler";
 import { parseAllLocations, parseSharedText } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
 import { ensurePersistentStorage } from "./lib/historyDb";
@@ -110,10 +112,11 @@ export default function App() {
 
   const hasStops = stops.length > 0;
 
-  return (
+  return (<BackSwipeHandler>
     <ErrorBoundary>
-      <GlobalLoader />
-      <Header />
+      <div className={`app-container${hasStops ? " has-stops" : " is-empty"}`}>
+        <GlobalLoader />
+        <Header />
 
       {/* Antes de armar una ruta: campo para agregar la primera parada.
           Una vez hay paradas, agregar más se hace desde el offcanvas
@@ -180,6 +183,8 @@ export default function App() {
           },
         }}
       />
+        <PushPermissionRequester />
+      </div>
     </ErrorBoundary>
-  );
+  </BackSwipeHandler>);
 }

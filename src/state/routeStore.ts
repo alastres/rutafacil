@@ -9,6 +9,7 @@ import { withLoader } from "./loadingStore";
 import { showToast } from "../lib/toast";
 import { AlertIcon } from "../components/icons";
 import { putRoute, defaultRouteLabel, type RouteHistoryRecord } from "../lib/historyDb";
+import { clearNotifiedStops } from "../lib/notification";
 
 export interface Stop {
   id: string;
@@ -80,6 +81,7 @@ interface RouteState {
   renameStop: (id: string, label: string) => void;
   reorderStops: (newPendingStops: Stop[]) => void;
   toggleDelivered: (id: string) => void;
+  markStopDelivered: (id: string) => void;
   clearRoute: () => void;
   setReturnPoint: (
     point: { id: string; label: string; lat: number; lng: number } | null,
@@ -213,6 +215,20 @@ export const useRouteStore = create<RouteState>()(
         syncHistory(get());
       },
 
+      markStopDelivered: (id) => {
+        set((s) => {
+          const stops = s.stops.map((st) =>
+            st.id === id ? { ...st, delivered: true } : st,
+          );
+          const allDelivered = stops.length > 0 && stops.every((st) => st.delivered);
+          return {
+            stops,
+            completedAt: allDelivered ? (s.completedAt ?? Date.now()) : null,
+          };
+        });
+        syncHistory(get());
+      },
+
       removeStop: (id) => {
         set((s) => ({
           stops: s.stops.filter((st) => st.id !== id),
@@ -331,6 +347,7 @@ export const useRouteStore = create<RouteState>()(
         // Último guardado del registro saliente antes de soltarlo — "Nueva"
         // no borra el historial, solo empieza una tanda de entregas distinta.
         syncHistory(get());
+        clearNotifiedStops();
         set({
           stops: [],
           origin: null,

@@ -51,6 +51,32 @@ body {
   overflow: hidden;
 }
 
+.back-swipe-handler {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.app-container.has-stops {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-container.is-empty {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 button {
   font: inherit;
   cursor: pointer;
