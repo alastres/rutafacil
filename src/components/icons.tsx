@@ -18,6 +18,7 @@ import {
   FaRoute,
   FaTrash,
   FaChevronDown,
+  FaPaste,
 } from "react-icons/fa6";
 import type { IconBaseProps } from "react-icons";
 
@@ -44,6 +45,7 @@ export const TrackIcon = FaLocationArrow;
 export const RouteIcon = FaRoute;
 export const TrashIcon = FaTrash;
 export const ChevronDownIcon = FaChevronDown;
+export const PasteIcon = FaPaste;
 
 /** Markup estático del check, para el marcador de mapa creado fuera de React
  * (MapLibre construye esos elementos de forma imperativa, sin árbol de
