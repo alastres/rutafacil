@@ -9,8 +9,8 @@ import { Header } from "./components/Header";
 import { AddStop } from "./components/AddStop";
 import { ReturnPointTrigger } from "./components/ReturnPointSheet";
 import { EmptyState } from "./components/EmptyState";
-import { RoadList } from "./components/RoadList";
 import { OptimizeBar } from "./components/OptimizeBar";
+import { StopsOffcanvas } from "./components/StopsOffcanvas";
 import { LiveTracker } from "./components/LiveTracker";
 import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -24,7 +24,7 @@ const MapView = lazy(() => import("./components/MapView"));
 export default function App() {
   const stops = useRouteStore((s) => s.stops);
   const addStop = useRouteStore((s) => s.addStop);
-  const [showMap, setShowMap] = useState(false);
+  const [showList, setShowList] = useState(false);
   const [moving, setMoving] = useState(false);
 
   const notify = useCallback((text: string, error = false) => {
@@ -107,20 +107,26 @@ export default function App() {
     void ensurePersistentStorage();
   }, []);
 
+  const hasStops = stops.length > 0;
+
   return (
     <ErrorBoundary>
       <GlobalLoader />
       <Header />
       <AddStop onSubmit={ingest} onNotify={notify} />
-      {(!showMap || stops.length === 0) && (
+
+      {/* Controles siempre visibles cuando no hay ruta activa */}
+      {!hasStops && (
         <div className="controls-bar">
           <ReturnPointTrigger onNotify={notify} />
           <ModeSelector />
         </div>
       )}
-      {showMap && stops.length > 0 && (
-        <div className="map-container-relative">
-          <Suspense fallback={<div className="map-wrap" />}>
+
+      {/* Mapa ocupa todo el espacio flexible cuando hay paradas */}
+      {hasStops ? (
+        <div className="map-container-fill">
+          <Suspense fallback={<div className="map-wrap map-wrap--fill" />}>
             <MapView />
           </Suspense>
           <div className="map-floating-controls">
@@ -128,17 +134,23 @@ export default function App() {
             <ModeSelector />
           </div>
         </div>
-      )}
-      {stops.length === 0 ? (
-        <EmptyState />
       ) : (
-        <RoadList moving={moving} />
+        <EmptyState />
       )}
+
+      {/* Lista de paradas como offcanvas */}
+      {hasStops && (
+        <StopsOffcanvas
+          open={showList}
+          moving={moving}
+          onClose={() => setShowList(false)}
+        />
+      )}
+
       <OptimizeBar
         onNotify={notify}
         onMoving={setMoving}
-        showMap={showMap}
-        onToggleMap={() => setShowMap((v) => !v)}
+        onToggleList={() => setShowList((v) => !v)}
       />
       <LiveTracker />
       <PWAInstallBanner />

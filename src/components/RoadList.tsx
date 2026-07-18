@@ -29,66 +29,74 @@ export function RoadList({ moving }: { moving: boolean }) {
   }
 
   return (
-    <div className={`road-list${moving ? " is-moving" : ""}`}>
+    <div className={`stop-list${moving ? " is-moving" : ""}`}>
+
+      {/* Encabezado: punto de partida */}
       {optimized && origin && (
-        <div className="road-item road-origin" aria-label="Punto de partida">
-          <span className="marker marker-origin" aria-hidden="true">
-            TÚ
-          </span>
-          <div className="origin-chip">
+        <div className="stop-list-origin">
+          <span className="sl-badge sl-badge--origin">TÚ</span>
+          <div className="sl-origin-info">
             {live ? (
-              <>
-                Siguiendo en vivo · {liveInfo}
-              </>
+              <>Siguiendo en vivo · {liveInfo}</>
             ) : (
-              <>
-                Punto de partida · {byStreets ? "ruta por calles" : "línea recta"}
-              </>
+              <>Punto de partida · {byStreets ? "ruta por calles" : "línea recta"}</>
             )}
           </div>
         </div>
       )}
 
+      {/* Paradas completadas */}
       <AnimatePresence initial={false}>
-        {/* 1. Paradas entregadas (estáticas) */}
+        {doneStops.length > 0 && (
+          <div className="sl-section-label">
+            <CheckIcon size={11} />
+            Completadas ({doneStops.length})
+          </div>
+        )}
         {doneStops.map((stop, i) => (
-          <StopItem
-            key={stop.id}
-            stop={stop}
-            position={i + 1}
-          />
+          <StopItem key={stop.id} stop={stop} position={i + 1} />
         ))}
       </AnimatePresence>
 
-      {/* 2. Paradas pendientes (arrastrables) */}
+      {/* Paradas pendientes */}
       {pendingStops.length > 0 && (
-        <Reorder.Group
-          axis="y"
-          values={pendingStops}
-          onReorder={reorderStops}
-          className="road-list-pending"
-          as="div"
-        >
-          {pendingStops.map((stop, j) => (
-            <StopItemDraggable
-              key={stop.id}
-              stop={stop}
-              position={doneStops.length + j + 1}
-              isNext={stop.id === nextId && optimized}
-              legKm={optimized ? stop.legKm : undefined}
-            />
-          ))}
-        </Reorder.Group>
+        <>
+          {doneStops.length > 0 && (
+            <div className="sl-section-label sl-section-label--pending">
+              Pendientes ({pendingStops.length})
+            </div>
+          )}
+          <Reorder.Group
+            axis="y"
+            values={pendingStops}
+            onReorder={reorderStops}
+            className="sl-pending-group"
+            as="div"
+          >
+            {pendingStops.map((stop, j) => (
+              <StopItemDraggable
+                key={stop.id}
+                stop={stop}
+                position={doneStops.length + j + 1}
+                isNext={stop.id === nextId && optimized}
+                legKm={optimized ? stop.legKm : undefined}
+              />
+            ))}
+          </Reorder.Group>
+        </>
       )}
 
+      {/* Punto de retorno */}
       {returnPoint && (
-        <div className="road-item road-return" aria-label="Punto de retorno">
-          <span className="marker marker-return" aria-hidden="true">
-            <PinIcon size={13} />
+        <div className="sl-return-item">
+          <span className="sl-badge sl-badge--return">
+            <PinIcon size={12} />
           </span>
-          <div className="origin-chip">
-            Punto de retorno · {returnPoint.label}
-            {optimized && returnLegKm !== null && ` · +${returnLegKm.toFixed(1)} km`}
+          <div className="sl-return-info">
+            <span className="sl-return-label">Retorno · {returnPoint.label}</span>
+            {optimized && returnLegKm !== null && (
+              <span className="sl-return-km">+{returnLegKm.toFixed(1)} km</span>
+            )}
           </div>
         </div>
       )}
@@ -96,53 +104,38 @@ export function RoadList({ moving }: { moving: boolean }) {
   );
 }
 
-/** Componente para paradas ya entregadas (estático, sin arrastre) */
-function StopItem({
-  stop,
-  position,
-}: {
-  stop: Stop;
-  position: number;
-}) {
+/** Parada entregada — estática */
+function StopItem({ stop, position }: { stop: Stop; position: number }) {
   const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
 
   return (
     <motion.div
       layout
-      className="road-item is-delivered"
-      initial={{ opacity: 0, y: 28, scale: 0.96 }}
+      className="sl-item sl-item--done"
+      initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, transition: { duration: 0.18 } }}
+      exit={{ opacity: 0, x: 60, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
     >
-      <span className="marker" aria-hidden="true">
-        <CheckIcon width={16} height={16} />
+      <span className="sl-badge sl-badge--done">
+        <CheckIcon size={13} />
       </span>
-      <article className="stop-card">
-        <div className="stop-eyebrow">
-          <span>Parada {position}</span>
-        </div>
-        <div className="stop-row">
-          <span className="stop-label stop-label--delivered">{stop.label}</span>
-        </div>
-        <motion.button
-          className="stamp"
-          style={{ pointerEvents: "auto", cursor: "pointer" }}
+      <article className="sl-card sl-card--done">
+        <div className="sl-card-meta">Parada {position}</div>
+        <div className="sl-card-label">{stop.label}</div>
+        <button
+          className="sl-stamp"
           onClick={() => toggleDelivered(stop.id)}
-          initial={{ scale: 2.4, opacity: 0, rotate: -20 }}
-          animate={{ scale: 1, opacity: 1, rotate: -8 }}
-          transition={{ type: "spring", stiffness: 400, damping: 16 }}
           title="Tocar para deshacer"
         >
-          <CheckIcon width={13} height={13} />
-          Entregado
-        </motion.button>
+          <CheckIcon size={11} /> Entregada
+        </button>
       </article>
     </motion.div>
   );
 }
 
-/** Componente para paradas pendientes (arrastrables) */
+/** Parada pendiente — arrastrable */
 function StopItemDraggable({
   stop,
   position,
@@ -159,14 +152,6 @@ function StopItemDraggable({
   const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
   const dragControls = useDragControls();
 
-  const classes = [
-    "road-item",
-    "is-draggable",
-    isNext ? "is-next" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <Reorder.Item
       as="div"
@@ -174,68 +159,62 @@ function StopItemDraggable({
       id={stop.id}
       dragListener={false}
       dragControls={dragControls}
-      className={classes}
-      initial={{ opacity: 0, y: 28, scale: 0.96 }}
+      className={`sl-item${isNext ? " sl-item--next" : ""}`}
+      initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, transition: { duration: 0.18 } }}
+      exit={{ opacity: 0, x: 60, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
     >
-      <span className="marker" aria-hidden="true">
-        {position}
-      </span>
-      <article className="stop-card stop-card--draggable">
-        <div className="stop-card-main">
-          {/* Manillar visual de arrastre */}
-          <div
-            className="drag-handle"
+      <span className="sl-badge sl-badge--num">{position}</span>
+
+      <article className={`sl-card${isNext ? " sl-card--next" : ""}`}>
+        <div className="sl-card-top">
+          <div className="sl-card-meta">
+            {isNext ? <strong className="sl-next-tag">Siguiente</strong> : `Parada ${position}`}
+            {legKm !== undefined && <span className="sl-leg-km">+{legKm.toFixed(1)} km</span>}
+          </div>
+          <button
+            className="sl-drag-handle"
             onPointerDown={(e) => dragControls.start(e)}
             title="Arrastrar para cambiar orden"
             style={{ touchAction: "none" }}
+            aria-label="Arrastrar parada"
           >
             <DragHandleIcon size={14} />
-          </div>
+          </button>
+        </div>
 
-          <div className="stop-card-content">
-            <div className="stop-eyebrow">
-              {isNext ? <strong>Siguiente</strong> : <span>Parada {position}</span>}
-              {legKm !== undefined && (
-                <span>+{legKm.toFixed(1)} km</span>
-              )}
-            </div>
-            <div className="stop-row">
-              <input
-                className="stop-label"
-                value={stop.label}
-                onChange={(e) => renameStop(stop.id, e.target.value)}
-                aria-label={`Nombre de la parada ${position}`}
-              />
-              <button
-                className="stop-remove"
-                onClick={() => removeStop(stop.id)}
-                aria-label={`Quitar ${stop.label}`}
-              >
-                <CloseIcon width={14} height={14} />
-              </button>
-            </div>
-            <div className="stop-actions">
-              <a
-                className="btn btn-nav"
-                href={googleMapsNavUrl(stop)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Navegar
-                <ArrowRightIcon width={15} height={15} />
-              </a>
-              <button
-                className="btn btn-done"
-                onClick={() => toggleDelivered(stop.id)}
-              >
-                Entregada
-                <CheckIcon width={15} height={15} />
-              </button>
-            </div>
-          </div>
+        <div className="sl-card-row">
+          <input
+            className="sl-card-label-input"
+            value={stop.label}
+            onChange={(e) => renameStop(stop.id, e.target.value)}
+            aria-label={`Nombre de la parada ${position}`}
+          />
+          <button
+            className="sl-remove-btn"
+            onClick={() => removeStop(stop.id)}
+            aria-label={`Quitar ${stop.label}`}
+          >
+            <CloseIcon size={13} />
+          </button>
+        </div>
+
+        <div className="sl-card-actions">
+          <a
+            className="sl-btn sl-btn--nav"
+            href={googleMapsNavUrl(stop)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Navegar <ArrowRightIcon size={13} />
+          </a>
+          <button
+            className="sl-btn sl-btn--done"
+            onClick={() => toggleDelivered(stop.id)}
+          >
+            Entregada <CheckIcon size={13} />
+          </button>
         </div>
       </article>
     </Reorder.Item>

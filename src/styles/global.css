@@ -42,9 +42,10 @@ body {
 #root {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 button {
@@ -168,98 +169,322 @@ input {
   cursor: default;
 }
 
-/* ============ La carretera viva ============ */
-.road-list {
-  list-style: none;
-  margin: 0;
-  padding: 16px 16px 130px calc(var(--road-w) + 24px);
+/* ============ Lista de paradas (nuevo diseño) ============ */
+.stop-list {
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Punto de partida */
+.stop-list-origin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px 14px;
+  border-bottom: 1px solid var(--pavimento);
+  margin-bottom: 4px;
+}
+
+.sl-origin-info {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+/* Separadores de sección */
+.sl-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  padding: 8px 0 6px;
+}
+
+.sl-section-label--pending {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pavimento);
+}
+
+/* Grupo de paradas pendientes */
+.sl-pending-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Fila de cada parada */
+.sl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
   position: relative;
-  flex: 1;
 }
 
-/* franja de asfalto */
-.road-list::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 16px;
-  width: var(--road-w);
-  background: var(--asfalto);
-  border-radius: 4px;
-}
-
-/* línea central discontinua, animada */
-.road-list::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(16px + var(--road-w) / 2 - 2px);
-  width: 4px;
-  background: repeating-linear-gradient(
-    180deg,
-    var(--pintura) 0 22px,
-    transparent 22px 44px
-  );
-  animation: road-flow 1.6s linear infinite;
-  animation-play-state: paused;
-}
-
-.road-list.is-moving::after {
-  animation-play-state: running;
-}
-
-@keyframes road-flow {
-  to {
-    background-position: 0 44px;
-  }
-}
-
-.road-item {
-  position: relative;
-  margin-bottom: 14px;
-}
-
-/* hito numerado sobre la carretera */
-.marker {
-  position: absolute;
-  left: calc(-1 * var(--road-w) / 2 - 24px - 17px);
-  top: 14px;
-  width: 34px;
-  height: 34px;
+/* Badge numerado */
+.sl-badge {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--pintura);
-  border: 3px solid var(--pintura-blanca);
   display: grid;
   place-items: center;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--asfalto);
-  z-index: 2;
+  background: var(--pintura);
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
 }
 
-.road-item.is-delivered .marker {
+.sl-badge--num {
+  background: var(--pintura);
+  color: var(--asfalto);
+}
+
+.sl-badge--done {
   background: var(--senal-verde);
-  color: var(--pintura-blanca);
+  color: #fff;
 }
 
-/* punto de partida: tu ubicación */
-.road-origin {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.marker-origin {
-  background: var(--pintura-blanca);
-  border-color: var(--pintura);
-  font-size: 0.72rem;
+.sl-badge--origin {
+  background: var(--asfalto);
+  color: var(--pintura);
+  font-size: 0.6rem;
   letter-spacing: 0.04em;
 }
 
-.origin-chip {
+.sl-badge--return {
+  background: var(--pintura-blanca);
+  border: 2px solid var(--cono);
+  color: var(--cono);
+}
+
+/* Tarjeta de parada */
+.sl-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--pintura-blanca);
+  border-radius: 10px;
+  padding: 10px 12px 10px 14px;
+  border: 1.5px solid transparent;
+  box-shadow: 0 1px 3px rgba(33,30,26,0.07), 0 1px 2px rgba(33,30,26,0.05);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.sl-card--next {
+  border-color: var(--pintura);
+  box-shadow: 0 4px 12px rgba(247,198,0,0.25), 0 1px 3px rgba(33,30,26,0.1);
+}
+
+.sl-card--done {
+  opacity: 0.6;
+  background: var(--pavimento);
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.sl-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.sl-card-meta {
+  font-family: var(--font-data);
+  font-size: 0.67rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sl-next-tag {
+  background: var(--pintura);
+  color: var(--asfalto);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-style: normal;
+}
+
+.sl-leg-km {
+  color: var(--tinta-suave);
+}
+
+/* Handle de arrastre */
+.sl-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta-clara);
+  cursor: grab;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.sl-drag-handle:hover {
+  color: var(--tinta-suave);
+  background: var(--pavimento);
+}
+
+.sl-drag-handle:active {
+  cursor: grabbing;
+  color: var(--asfalto);
+}
+
+/* Fila del label + botón eliminar */
+.sl-card-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sl-card-label-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 2px 0;
+  color: var(--asfalto);
+  line-height: 1.2;
+}
+
+.sl-card-label-input:focus {
+  outline: none;
+  border-bottom: 2px solid var(--pintura);
+}
+
+.sl-card-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--asfalto);
+  padding: 2px 0;
+  line-height: 1.2;
+}
+
+.sl-remove-btn {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--tinta-clara);
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sl-remove-btn:hover {
+  color: var(--cono);
+  background: rgba(217,72,28,0.08);
+}
+
+/* Acciones de la tarjeta */
+.sl-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sl-btn {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  text-decoration: none;
+  border: 1.5px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sl-btn:hover {
+  opacity: 0.82;
+}
+
+.sl-btn--nav {
+  background: var(--asfalto);
+  color: var(--pintura);
+  border-color: var(--asfalto);
+}
+
+.sl-btn--done {
+  background: transparent;
+  color: var(--senal-verde);
+  border-color: var(--senal-verde);
+}
+
+/* Sello entregada */
+.sl-stamp {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-6deg);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--senal-verde);
+  border: 2px solid var(--senal-verde);
+  border-radius: 4px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(29,122,70,0.08);
+  cursor: pointer;
+}
+
+/* Punto de retorno */
+.sl-return-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--pavimento);
+}
+
+.sl-return-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sl-return-label {
   font-family: var(--font-data);
   font-size: 0.72rem;
   letter-spacing: 0.1em;
@@ -267,120 +492,14 @@ input {
   color: var(--tinta-suave);
 }
 
-.marker-return {
-  background: var(--pintura-blanca);
-  border-color: var(--cono);
-  color: var(--cono);
-  font-size: 0.65rem;
-}
-
-/* ============ Tarjeta de parada: señal pintada ============ */
-.stop-card {
-  background: var(--pintura-blanca);
-  border: var(--border);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.stop-card-main {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-}
-
-.drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--tinta-suave);
-  cursor: grab;
-  padding: 0;
-  border-right: 2px dashed var(--tinta-clara);
-  padding-right: 12px;
-  margin-right: -2px;
-  transition: color 0.15s ease;
-}
-
-.drag-handle:hover {
-  color: var(--asfalto);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-  color: var(--pintura);
-}
-
-.stop-card-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.road-item.is-next .stop-card {
-  border-color: var(--asfalto);
-  box-shadow: 6px 6px 0 var(--pintura);
-}
-
-.stop-eyebrow {
+.sl-return-km {
   font-family: var(--font-data);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--tinta-suave);
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.road-item.is-next .stop-eyebrow strong {
-  color: var(--asfalto);
-  background: var(--pintura);
-  padding: 1px 6px;
-  border-radius: 3px;
-}
-
-.stop-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.stop-label {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.05rem;
-  padding: 2px 0;
-  color: var(--asfalto);
-}
-
-.stop-remove {
-  border: none;
-  background: transparent;
-  color: var(--tinta-suave);
-  font-size: 1rem;
-  padding: 4px 6px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stop-remove:hover {
+  font-size: 0.7rem;
   color: var(--cono);
+  letter-spacing: 0.06em;
 }
 
-.stop-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
+/* Legacy: mantener .btn y .stop-* para compatibilidad con otros componentes si los usan */
 .btn {
   font-family: var(--font-display);
   font-weight: 800;
@@ -396,63 +515,6 @@ input {
   align-items: center;
   justify-content: center;
   gap: 6px;
-}
-
-@media (max-width: 420px) {
-  .stop-actions {
-    flex-direction: column;
-    gap: 6px;
-  }
-  .stop-actions .btn {
-    padding: 6px 10px;
-    font-size: 0.78rem;
-    width: 100%;
-  }
-}
-
-.btn-nav {
-  background: var(--pintura);
-  color: var(--asfalto);
-  flex: 1;
-}
-
-.btn-done {
-  background: var(--pintura-blanca);
-  color: var(--senal-verde);
-  border-color: var(--senal-verde);
-  flex: 1;
-}
-
-.road-item.is-delivered .stop-card {
-  opacity: 0.72;
-  background: var(--pavimento);
-}
-
-/* sello ENTREGADO con franjas de peligro */
-.stamp {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%) rotate(-8deg);
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 0.9rem;
-  letter-spacing: 0.1em;
-  color: var(--senal-verde);
-  border: 3px solid var(--senal-verde);
-  border-radius: 4px;
-  padding: 3px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background:
-    repeating-linear-gradient(
-      45deg,
-      transparent 0 8px,
-      rgba(29, 122, 70, 0.12) 8px 16px
-    ),
-    var(--pintura-blanca);
-  pointer-events: none;
 }
 
 /* ============ Estado vacío: cartel de obra ============ */
@@ -752,6 +814,25 @@ input {
 }
 
 /* ============ Mapa ============ */
+
+/* Mapa que llena todo el espacio disponible entre header y footer */
+.map-container-fill {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.map-container-fill .map-wrap {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Mapa parcial (uso legado / referencia) */
 .map-container-relative {
   position: relative;
   margin: 12px 16px 0;
@@ -1558,10 +1639,6 @@ input {
 
 /* ============ Movimiento reducido ============ */
 @media (prefers-reduced-motion: reduce) {
-  .road-list::after {
-    animation: none;
-  }
-
   .global-loader.is-active::after {
     animation: none;
     width: 100%;
@@ -1665,4 +1742,120 @@ input {
 
 .btn-install-close:hover {
   color: var(--pintura-blanca);
+}
+
+/* ============ Offcanvas: lista de paradas ============ */
+.stops-offcanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.stops-offcanvas.is-open {
+  pointer-events: auto;
+}
+
+.stops-offcanvas__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(33, 30, 26, 0.5);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.stops-offcanvas.is-open .stops-offcanvas__overlay {
+  opacity: 1;
+}
+
+.stops-offcanvas__panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: min(calc(100% - 20px), 440px);
+  background: var(--pavimento);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  transform: translateX(calc(100% + 20px));
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.24s ease;
+  box-shadow: -12px 0 40px rgba(33, 30, 26, 0.3);
+}
+
+.stops-offcanvas.is-open .stops-offcanvas__panel {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.stops-offcanvas__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 18px 16px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.stops-offcanvas__header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--pintura);
+}
+
+.stops-offcanvas__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pintura-blanca);
+}
+
+.stops-offcanvas__title svg {
+  color: var(--pintura);
+}
+
+.stops-offcanvas__close {
+  background: rgba(255,255,255,0.06);
+  border: none;
+  color: var(--pintura-blanca);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.stops-offcanvas__close:hover {
+  color: var(--asfalto);
+  background: var(--pintura);
+  transform: rotate(90deg);
+}
+
+.stops-offcanvas__body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Lista de paradas dentro del offcanvas: ajuste de padding inferior */
+.stops-offcanvas__body .stop-list {
+  padding-bottom: 24px;
 }

@@ -5,7 +5,7 @@ import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
-import { CheckIcon, MapIcon, ListIcon, TrackIcon, RouteIcon, TrashIcon } from "./icons";
+import { CheckIcon, ListIcon, TrackIcon, RouteIcon, TrashIcon } from "./icons";
 
 /** Distingue "permiso bloqueado" (hay que ir a ajustes) de un fallo puntual. */
 async function geolocationDenied(): Promise<boolean> {
@@ -20,13 +20,11 @@ async function geolocationDenied(): Promise<boolean> {
 export function OptimizeBar({
   onNotify,
   onMoving,
-  showMap,
-  onToggleMap,
+  onToggleList,
 }: {
   onNotify: (text: string, error?: boolean) => void;
   onMoving: (moving: boolean) => void;
-  showMap: boolean;
-  onToggleMap: () => void;
+  onToggleList: () => void;
 }) {
   const stops = useRouteStore((s) => s.stops);
   const applyOptimization = useRouteStore((s) => s.applyOptimization);
@@ -163,9 +161,9 @@ export function OptimizeBar({
 
   return (
     <div className="bottom-bar">
-      <button className="btn-map bottom-bar-btn" onClick={onToggleMap} title={showMap ? "Ver Lista" : "Ver Mapa"}>
-        {showMap ? <ListIcon size={18} /> : <MapIcon size={18} />}
-        <span className="btn-label">{showMap ? "Lista" : "Mapa"}</span>
+      <button className="btn-map bottom-bar-btn" onClick={onToggleList} title="Ver lista de paradas">
+        <ListIcon size={18} />
+        <span className="btn-label">Lista</span>
       </button>
       <button
         className={`btn-track bottom-bar-btn${tracking ? " is-on" : ""}`}
