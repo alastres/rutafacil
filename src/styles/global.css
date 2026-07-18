@@ -1030,6 +1030,54 @@ input {
   border-left-color: var(--cono) !important;
 }
 
+/* Avisos repetidos agrupados con badge de conteo */
+.rht-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.rht-group__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rht-group__line {
+  display: block;
+}
+
+.rht-group__line:not(:last-child) {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--pavimento);
+}
+
+.rht-group__badge {
+  flex-shrink: 0;
+  border: none;
+  background: var(--asfalto);
+  color: var(--pintura);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rht-group__badge:hover {
+  background: var(--asfalto-claro);
+}
+
 /* Modal de confirmación tipo cartel de obra */
 .confirm-toast {
   background: var(--asfalto) !important;
