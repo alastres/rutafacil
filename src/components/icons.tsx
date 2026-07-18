@@ -21,6 +21,7 @@ import {
   FaCrown,
   FaWhatsapp,
   FaChevronDown,
+  FaPaste,
 } from "react-icons/fa6";
 import type { IconBaseProps } from "react-icons";
 
@@ -50,6 +51,7 @@ export const LockIcon = FaLock;
 export const CrownIcon = FaCrown;
 export const WhatsappIcon = FaWhatsapp;
 export const ChevronDownIcon = FaChevronDown;
+export const PasteIcon = FaPaste;
 
 /** Markup estático del check, para el marcador de mapa creado fuera de React
  * (MapLibre construye esos elementos de forma imperativa, sin árbol de

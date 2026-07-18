@@ -194,7 +194,7 @@ export default function App() {
     <ErrorBoundary>
       <GlobalLoader />
       <Header />
-      <AddStop onSubmit={ingest} />
+      <AddStop onSubmit={ingest} onNotify={notify} />
       {(!showMap || stops.length === 0) && (
         <div className="controls-bar">
           <ReturnPointTrigger onNotify={notify} />
