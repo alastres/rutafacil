@@ -84,6 +84,19 @@ export async function deleteRoute(id: string): Promise<void> {
   });
 }
 
+/** Borra varios registros en una sola transacción (eliminar por lotes). */
+export async function deleteRoutes(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    for (const id of ids) store.delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 export interface SavedReturnPoint {
   id: string;
   label: string;

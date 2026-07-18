@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { listRoutes, deleteRoute, putRoute, type RouteHistoryRecord } from "../lib/historyDb";
+import { listRoutes, deleteRoute, deleteRoutes, putRoute, type RouteHistoryRecord } from "../lib/historyDb";
 
 interface HistoryState {
   records: RouteHistoryRecord[];
@@ -8,6 +8,8 @@ interface HistoryState {
   /** Renombra una ruta que YA NO es la activa (esa se renombra vía routeStore.setHistoryLabel). */
   rename: (id: string, label: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  /** Elimina por lotes (eliminar seleccionadas del historial). */
+  removeMany: (ids: string[]) => Promise<void>;
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
@@ -28,6 +30,11 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   remove: async (id) => {
     await deleteRoute(id);
+    await get().refresh();
+  },
+
+  removeMany: async (ids) => {
+    await deleteRoutes(ids);
     await get().refresh();
   },
 }));

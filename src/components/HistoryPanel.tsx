@@ -26,15 +26,78 @@ export function HistoryPanel() {
   const [open, setOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<RouteHistoryRecord | null>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const records = useHistoryStore((s) => s.records);
   const refresh = useHistoryStore((s) => s.refresh);
+  const removeMany = useHistoryStore((s) => s.removeMany);
+  const activeHistoryId = useRouteStore((s) => s.historyId);
+  const detachHistory = useRouteStore((s) => s.detachHistory);
 
   useEffect(() => {
     if (open) {
       void refresh();
       void isStoragePersisted().then(setPersisted);
+    } else {
+      setSelectMode(false);
+      setSelected(new Set());
     }
   }, [open, refresh]);
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = records.length > 0 && selected.size === records.length;
+  const toggleSelectAll = () => {
+    setSelected(allSelected ? new Set() : new Set(records.map((r) => r.id)));
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const handleDeleteSelected = () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    toast(
+      (t) => (
+        <div className="confirm-modal" role="alertdialog" aria-label="Eliminar rutas seleccionadas">
+          <p className="confirm-modal__text">
+            ¿Eliminar {ids.length} ruta{ids.length > 1 ? "s" : ""} del historial? No se puede
+            deshacer.
+          </p>
+          <div className="confirm-modal__actions">
+            <button
+              className="btn btn--danger"
+              onClick={() => {
+                toast.dismiss(t.id);
+                // Igual que en el borrado individual: si la ruta activa está
+                // entre las seleccionadas, hay que soltarla del store ANTES
+                // de borrar el registro para que no se vuelva a escribir.
+                if (activeHistoryId && ids.includes(activeHistoryId)) {
+                  detachHistory(activeHistoryId);
+                }
+                void removeMany(ids).then(exitSelectMode);
+              }}
+            >
+              Eliminar
+            </button>
+            <button className="btn btn--ghost" onClick={() => toast.dismiss(t.id)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity, className: "confirm-toast" },
+    );
+  };
 
   return (
     <>
@@ -65,6 +128,29 @@ export function HistoryPanel() {
                 <CloseIcon width={16} height={16} />
               </button>
             </div>
+
+            {records.length > 0 && (
+              <div className="history-panel__toolbar">
+                {selectMode ? (
+                  <>
+                    <button className="history-link-btn" onClick={toggleSelectAll}>
+                      {allSelected ? "Ninguna" : "Todas"}
+                    </button>
+                    <span className="history-toolbar__count">
+                      {selected.size} seleccionada{selected.size === 1 ? "" : "s"}
+                    </span>
+                    <button className="history-link-btn" onClick={exitSelectMode}>
+                      Cancelar
+                    </button>
+                  </>
+                ) : (
+                  <button className="history-link-btn" onClick={() => setSelectMode(true)}>
+                    Eliminar por lotes
+                  </button>
+                )}
+              </div>
+            )}
+
             {records.length === 0 ? (
               <p className="history-empty">
                 Todavía no hay rutas guardadas. Se registran solas en cuanto agregues la
@@ -73,10 +159,26 @@ export function HistoryPanel() {
             ) : (
               <ul className="history-list">
                 {records.map((r) => (
-                  <HistoryItem key={r.id} record={r} onViewDetail={() => setDetailRecord(r)} />
+                  <HistoryItem
+                    key={r.id}
+                    record={r}
+                    onViewDetail={() => setDetailRecord(r)}
+                    selectMode={selectMode}
+                    selected={selected.has(r.id)}
+                    onToggleSelect={() => toggleSelected(r.id)}
+                  />
                 ))}
               </ul>
             )}
+
+            {selectMode && selected.size > 0 && (
+              <div className="history-panel__footer">
+                <button className="btn btn--danger" onClick={handleDeleteSelected}>
+                  <FaTrash size={13} /> Eliminar ({selected.size})
+                </button>
+              </div>
+            )}
+
             {persisted !== null && (
               <p className="history-storage-note">
                 {persisted
@@ -98,9 +200,15 @@ export function HistoryPanel() {
 function HistoryItem({
   record,
   onViewDetail,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: {
   record: RouteHistoryRecord;
   onViewDetail: () => void;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const rename = useHistoryStore((s) => s.rename);
   const remove = useHistoryStore((s) => s.remove);
@@ -160,8 +268,21 @@ function HistoryItem({
   };
 
   return (
-    <li className={`history-item${record.status === "completed" ? " is-completed" : ""}`}>
+    <li
+      className={`history-item${record.status === "completed" ? " is-completed" : ""}${selectMode ? " is-selectable" : ""}${selected ? " is-selected" : ""}`}
+      onClick={selectMode ? onToggleSelect : undefined}
+    >
       <div className="history-item__top">
+        {selectMode && (
+          <input
+            type="checkbox"
+            className="history-item__checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Seleccionar ${record.label}`}
+          />
+        )}
         {editing ? (
           <input
             className="history-item__input"
@@ -195,29 +316,31 @@ function HistoryItem({
           <span>Duración: {formatElapsed(record.elapsedMs)}</span>
         )}
       </div>
-      <div className="history-item__actions">
-        <button
-          className="history-icon-btn"
-          onClick={onViewDetail}
-          aria-label={`Ver detalle de ${record.label}`}
-        >
-          <FaEye size={13} />
-        </button>
-        <button
-          className="history-icon-btn"
-          onClick={() => setEditing(true)}
-          aria-label={`Renombrar ${record.label}`}
-        >
-          <FaPen size={13} />
-        </button>
-        <button
-          className="history-icon-btn history-icon-btn--danger"
-          onClick={handleDelete}
-          aria-label={`Eliminar ${record.label}`}
-        >
-          <FaTrash size={13} />
-        </button>
-      </div>
+      {!selectMode && (
+        <div className="history-item__actions">
+          <button
+            className="history-icon-btn"
+            onClick={onViewDetail}
+            aria-label={`Ver detalle de ${record.label}`}
+          >
+            <FaEye size={13} />
+          </button>
+          <button
+            className="history-icon-btn"
+            onClick={() => setEditing(true)}
+            aria-label={`Renombrar ${record.label}`}
+          >
+            <FaPen size={13} />
+          </button>
+          <button
+            className="history-icon-btn history-icon-btn--danger"
+            onClick={handleDelete}
+            aria-label={`Eliminar ${record.label}`}
+          >
+            <FaTrash size={13} />
+          </button>
+        </div>
+      )}
     </li>
   );
 }
