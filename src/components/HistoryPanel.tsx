@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
+import { activeOverlays } from "../lib/overlays";
 import { toast } from "react-hot-toast";
 import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
 import { useHistoryStore } from "../state/historyStore";
@@ -12,6 +13,7 @@ import {
 } from "../lib/historyDb";
 import { CloseIcon } from "./icons";
 import { RouteDetailModal } from "./RouteDetailModal";
+import { ConfirmToast } from "./ConfirmToast";
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleString("es-CO", {
@@ -44,6 +46,12 @@ export function HistoryPanel() {
     }
   }, [open, refresh]);
 
+  useEffect(() => {
+    if (open) {
+      return activeOverlays.register(() => setOpen(false));
+    }
+  }, [open]);
+
   const toggleSelected = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -68,32 +76,17 @@ export function HistoryPanel() {
     if (ids.length === 0) return;
     toast(
       (t) => (
-        <div className="confirm-modal" role="alertdialog" aria-label="Eliminar rutas seleccionadas">
-          <p className="confirm-modal__text">
-            ¿Eliminar {ids.length} ruta{ids.length > 1 ? "s" : ""} del historial? No se puede
-            deshacer.
-          </p>
-          <div className="confirm-modal__actions">
-            <button
-              className="btn btn--danger"
-              onClick={() => {
-                toast.dismiss(t.id);
-                // Igual que en el borrado individual: si la ruta activa está
-                // entre las seleccionadas, hay que soltarla del store ANTES
-                // de borrar el registro para que no se vuelva a escribir.
-                if (activeHistoryId && ids.includes(activeHistoryId)) {
-                  detachHistory(activeHistoryId);
-                }
-                void removeMany(ids).then(exitSelectMode);
-              }}
-            >
-              Eliminar
-            </button>
-            <button className="btn btn--ghost" onClick={() => toast.dismiss(t.id)}>
-              Cancelar
-            </button>
-          </div>
-        </div>
+        <ConfirmToast
+          t={t}
+          message={`¿Eliminar ${ids.length} ruta${ids.length > 1 ? "s" : ""} del historial? No se puede deshacer.`}
+          confirmText="Eliminar"
+          onConfirm={() => {
+            if (activeHistoryId && ids.includes(activeHistoryId)) {
+              detachHistory(activeHistoryId);
+            }
+            void removeMany(ids).then(exitSelectMode);
+          }}
+        />
       ),
       { duration: Infinity, className: "confirm-toast" },
     );
@@ -239,29 +232,15 @@ function HistoryItem({
   const handleDelete = () => {
     toast(
       (t) => (
-        <div className="confirm-modal" role="alertdialog" aria-label="Eliminar ruta">
-          <p className="confirm-modal__text">
-            ¿Eliminar &ldquo;{record.label}&rdquo; del historial? No se puede deshacer.
-          </p>
-          <div className="confirm-modal__actions">
-            <button
-              className="btn btn--danger"
-              onClick={() => {
-                toast.dismiss(t.id);
-                // Si es la ruta que sigue en pantalla, hay que soltarla del
-                // store ANTES de borrar el registro: si no, el próximo
-                // cambio (una entrega marcada, etc.) la volvería a escribir.
-                if (isActive) detachHistory(record.id);
-                void remove(record.id);
-              }}
-            >
-              Eliminar
-            </button>
-            <button className="btn btn--ghost" onClick={() => toast.dismiss(t.id)}>
-              Cancelar
-            </button>
-          </div>
-        </div>
+        <ConfirmToast
+          t={t}
+          message={`¿Eliminar “${record.label}” del historial? No se puede deshacer.`}
+          confirmText="Eliminar"
+          onConfirm={() => {
+            if (isActive) detachHistory(record.id);
+            void remove(record.id);
+          }}
+        />
       ),
       { duration: Infinity, className: "confirm-toast" },
     );

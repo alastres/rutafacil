@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import { ConfirmToast } from "./ConfirmToast";
 import { getPosition, haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
@@ -128,31 +129,17 @@ export function OptimizeBar({
   const handleClear = () => {
     toast(
       (t) => (
-        <div className="confirm-modal" role="alertdialog" aria-label="Borrar ruta">
-          <p className="confirm-modal__text">
-            ¿Borrar todas las paradas y empezar una ruta nueva?
-          </p>
-          <div className="confirm-modal__actions">
-            <button
-              className="btn btn--danger"
-              onClick={() => {
-                toast.dismiss(t.id);
-                clearRoute();
-                showSuccessToast("Ruta nueva iniciada", {
-                  icon: <CheckIcon width={18} height={18} />,
-                });
-              }}
-            >
-              Borrar todo
-            </button>
-            <button
-              className="btn btn--ghost"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
+        <ConfirmToast
+          t={t}
+          message="¿Borrar todas las paradas y empezar una ruta nueva?"
+          confirmText="Borrar todo"
+          onConfirm={() => {
+            clearRoute();
+            showSuccessToast("Ruta nueva iniciada", {
+              icon: <CheckIcon width={18} height={18} />,
+            });
+          }}
+        />
       ),
       { duration: Infinity, className: "confirm-toast" },
     );

@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { RoadList } from "./RoadList";
 import { AddStop } from "./AddStop";
 import { CloseIcon, ListIcon } from "./icons";
+import { activeOverlays } from "../lib/overlays";
 
 export function StopsOffcanvas({
   open,
@@ -16,6 +18,12 @@ export function StopsOffcanvas({
   onAddStop: (text: string) => Promise<boolean>;
   onNotify: (text: string, error?: boolean) => void;
 }) {
+  useEffect(() => {
+    if (open) {
+      return activeOverlays.register(onClose);
+    }
+  }, [open, onClose]);
+
   return createPortal(
     <div
       className={`stops-offcanvas${open ? " is-open" : ""}`}

@@ -1,6 +1,8 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
+import { activeOverlays } from "../lib/overlays";
 import { toast } from "react-hot-toast";
+import { ConfirmToast } from "./ConfirmToast";
 import { useReturnPointsStore } from "../state/returnPointsStore";
 import { useRouteStore } from "../state/routeStore";
 import type { SavedReturnPoint } from "../lib/historyDb";
@@ -59,6 +61,10 @@ function ReturnPointSheet({
     if (loaded && !creating && points.length === 0) setCreating(true);
   }, [loaded, creating, points.length]);
 
+  useEffect(() => {
+    return activeOverlays.register(onClose);
+  }, [onClose]);
+
   const handleUse = (point: SavedReturnPoint) => {
     setReturnPoint({ id: point.id, label: point.label, lat: point.lat, lng: point.lng });
     onNotify(`Punto de retorno: ${point.label}`);
@@ -68,26 +74,15 @@ function ReturnPointSheet({
   const handleDelete = (point: SavedReturnPoint) => {
     toast(
       (t) => (
-        <div className="confirm-modal" role="alertdialog" aria-label="Eliminar punto de retorno">
-          <p className="confirm-modal__text">
-            ¿Eliminar &ldquo;{point.label}&rdquo;? No se puede deshacer.
-          </p>
-          <div className="confirm-modal__actions">
-            <button
-              className="btn btn--danger"
-              onClick={() => {
-                toast.dismiss(t.id);
-                void remove(point.id);
-                if (returnPoint?.id === point.id) setReturnPoint(null);
-              }}
-            >
-              Eliminar
-            </button>
-            <button className="btn btn--ghost" onClick={() => toast.dismiss(t.id)}>
-              Cancelar
-            </button>
-          </div>
-        </div>
+        <ConfirmToast
+          t={t}
+          message={`¿Eliminar “${point.label}”? No se puede deshacer.`}
+          confirmText="Eliminar"
+          onConfirm={() => {
+            void remove(point.id);
+            if (returnPoint?.id === point.id) setReturnPoint(null);
+          }}
+        />
       ),
       { duration: Infinity, className: "confirm-toast" },
     );

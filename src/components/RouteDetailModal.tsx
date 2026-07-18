@@ -1,5 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { activeOverlays } from "../lib/overlays";
 import { CloseIcon, CheckIcon } from "./icons";
 import { MODES } from "./ModeSelector";
 import { formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
@@ -25,6 +26,10 @@ export function RouteDetailModal({
 }) {
   const stops = record.stops ?? [];
   const modeMeta = MODES.find((m) => m.value === record.mode);
+
+  useEffect(() => {
+    return activeOverlays.register(onClose);
+  }, [onClose]);
 
   return createPortal(
     <div
