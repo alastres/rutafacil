@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { IconType } from "react-icons";
 import { useRouteStore } from "../state/routeStore";
 import { useLoadingStore } from "../state/loadingStore";
 import type { TransportMode } from "../lib/routing";
-import { CarIcon, MotorbikeIcon, BikeIcon, WalkIcon } from "./icons";
+import { CarIcon, MotorbikeIcon, BikeIcon, WalkIcon, ChevronDownIcon } from "./icons";
 
 /** Datos de cada modo de transporte; se reutiliza en la vista de detalle
  * del historial para mostrar el mismo ícono/nombre del vehículo usado. */
@@ -23,19 +23,21 @@ export function ModeSelector() {
   const setMode = useRouteStore((s) => s.setMode);
   // Bloquea los botones mientras haya CUALQUIER carga en curso (no solo la
   // propia): evita elegir otro vehículo mientras "Armar ruta" o el
-  // recálculo automático en vivo ya están pidiendo una ruta, y así ahorra
-  // peticiones que de todos modos se descartarían.
+  // recálculo automático en vivo ya están pidiendo una ruta.
   const appLoading = useLoadingStore((s) => s.count > 0);
   const [changing, setChanging] = useState(false);
-  // Candado síncrono, independiente del ciclo de render de React: rechaza
-  // un segundo clic en el mismo instante, antes de que `disabled` llegue a
-  // pintarse en el DOM (más estricto que confiar solo en el atributo).
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const clickLock = useRef(false);
 
   const handleClick = async (value: TransportMode) => {
-    if (value === mode || clickLock.current || appLoading) return;
+    if (value === mode || clickLock.current || appLoading) {
+      setIsOpen(false);
+      return;
+    }
     clickLock.current = true;
     setChanging(true);
+    setIsOpen(false);
     try {
       await setMode(value);
     } finally {
@@ -44,23 +46,53 @@ export function ModeSelector() {
     }
   };
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const currentMode = MODES.find((m) => m.value === mode) || MODES[0];
+  const CurrentIcon = currentMode.Icon;
   const disabled = changing || appLoading;
 
   return (
-    <div className="mode-selector" role="group" aria-label="Modo de transporte">
-      {MODES.map(({ value, label, Icon }) => (
-        <button
-          key={value}
-          type="button"
-          className={`mode-btn${mode === value ? " is-active" : ""}`}
-          aria-pressed={mode === value}
-          disabled={disabled}
-          onClick={() => void handleClick(value)}
-        >
-          <Icon width={20} height={20} />
-          {label}
-        </button>
-      ))}
+    <div className="mode-dropdown-container" ref={dropdownRef}>
+      <button
+        type="button"
+        className="mode-dropdown-trigger"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        disabled={disabled}
+      >
+        <CurrentIcon width={16} height={16} />
+        <span>{currentMode.label}</span>
+        <ChevronDownIcon width={12} height={12} className={`caret ${isOpen ? "open" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <ul className="mode-dropdown-menu" role="listbox">
+          {MODES.map(({ value, label, Icon }) => (
+            <li key={value} role="option" aria-selected={mode === value}>
+              <button
+                type="button"
+                className={`mode-dropdown-item${mode === value ? " is-active" : ""}`}
+                onClick={() => void handleClick(value)}
+              >
+                <Icon width={16} height={16} />
+                <span>{label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

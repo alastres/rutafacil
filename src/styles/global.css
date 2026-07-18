@@ -508,40 +508,126 @@ input {
   color: var(--tinta-suave);
 }
 
-/* ============ Selector de modo de transporte ============ */
-.mode-selector {
-  display: flex;
-  gap: 6px;
-  padding: 10px 12px 0;
+/* ============ Selector de modo de transporte (Dropdown) ============ */
+.mode-dropdown-container {
+  position: relative;
+  display: inline-block;
 }
 
-.mode-btn {
-  flex: 1;
-  display: flex;
+.mode-dropdown-trigger {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 9px 6px;
-  background: var(--pavimento);
+  padding: 8px 12px;
+  background: var(--pintura-blanca);
   color: var(--asfalto);
-  border: 2px solid var(--asfalto);
+  border: var(--border);
   border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--asfalto);
+  transition: all 0.15s ease;
+}
+
+.mode-dropdown-trigger:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--asfalto);
+}
+
+.mode-dropdown-trigger .caret {
+  transition: transform 0.2s ease;
+}
+
+.mode-dropdown-trigger .caret.open {
+  transform: rotate(180deg);
+}
+
+.mode-dropdown-menu {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--pintura-blanca);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 var(--asfalto);
+  z-index: 100;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mode-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--asfalto);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  text-align: left;
   cursor: pointer;
 }
 
-.mode-btn.is-active {
-  background: var(--pintura);
-  border-color: var(--asfalto);
+.mode-dropdown-item:hover {
+  background: var(--pavimento);
 }
 
-.mode-btn:disabled {
-  opacity: 0.45;
+.mode-dropdown-item.is-active {
+  background: var(--pintura);
+  font-weight: 900;
+}
+
+.mode-dropdown-trigger:disabled {
+  opacity: 0.5;
   cursor: default;
+}
+
+/* Adaptación del disparador del punto de retorno en el mapa y la barra */
+.controls-bar .return-point-trigger,
+.map-floating-controls .return-point-trigger {
+  margin: 0;
+  align-self: center;
+}
+
+.map-floating-controls .return-point-trigger {
+  background: var(--pintura-blanca);
+  border: var(--border);
+  box-shadow: 2px 2px 0 var(--asfalto);
+  color: var(--asfalto);
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+}
+
+.map-floating-controls .return-point-trigger:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--asfalto);
+}
+
+.map-floating-controls .return-point-trigger.is-locked {
+  border-style: dashed;
+  border-color: var(--tinta-clara);
+  color: var(--tinta-suave);
+  box-shadow: none;
 }
 
 /* ============ Barra inferior ============ */
@@ -664,12 +750,42 @@ input {
 }
 
 /* ============ Mapa ============ */
+.map-container-relative {
+  position: relative;
+  margin: 12px 16px 0;
+}
+
 .map-wrap {
   height: 46dvh;
-  margin: 12px 16px 0;
+  margin: 0;
   border: var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+.map-floating-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.map-floating-controls > * {
+  pointer-events: auto;
+}
+
+/* ============ Barra de controles (cuando el mapa está oculto) ============ */
+.controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 16px 8px;
 }
 
 .map-marker {
