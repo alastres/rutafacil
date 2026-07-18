@@ -194,13 +194,23 @@ export default function App() {
     <ErrorBoundary>
       <GlobalLoader />
       <Header />
-      <ModeSelector />
-      <AddStop onSubmit={ingest} onNotify={notify} />
-      <ReturnPointTrigger onNotify={notify} />
+      <AddStop onSubmit={ingest} />
+      {(!showMap || stops.length === 0) && (
+        <div className="controls-bar">
+          <ReturnPointTrigger onNotify={notify} />
+          <ModeSelector />
+        </div>
+      )}
       {showMap && stops.length > 0 && (
-        <Suspense fallback={<div className="map-wrap" />}>
-          <MapView />
-        </Suspense>
+        <div className="map-container-relative">
+          <Suspense fallback={<div className="map-wrap" />}>
+            <MapView />
+          </Suspense>
+          <div className="map-floating-controls">
+            <ReturnPointTrigger onNotify={notify} />
+            <ModeSelector />
+          </div>
+        </div>
       )}
       {stops.length === 0 ? (
         <EmptyState />
