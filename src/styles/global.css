@@ -904,7 +904,7 @@ input {
   color: var(--pintura-blanca);
   border: 3px solid var(--asfalto) !important;
   border-radius: 10px !important;
-  box-shadow: 8px 8px 0 var(--asfalto) !important;
+  box-shadow: none !important;
   padding: 0 !important;
   max-width: 432px !important;
 }
