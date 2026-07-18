@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 import { useReturnPointsStore } from "../state/returnPointsStore";
 import { useRouteStore } from "../state/routeStore";
 import type { SavedReturnPoint } from "../lib/historyDb";
-import { CloseIcon, PinIcon, PlusIcon } from "./icons";
+import { CloseIcon, PinIcon, PlusIcon, CheckIcon, TrashIcon } from "./icons";
 import { ReturnPointForm } from "./ReturnPointForm";
 
 let counter = 0;
@@ -127,20 +127,38 @@ function ReturnPointSheet({
         ) : (
           <>
             <ul className="return-point-list">
-              {points.map((point) => (
-                <li key={point.id} className="return-point-list__item">
-                  <button className="return-point-list__use" onClick={() => handleUse(point)}>
-                    {point.label}
-                  </button>
-                  <button
-                    className="history-icon-btn history-icon-btn--danger"
-                    onClick={() => handleDelete(point)}
-                    aria-label={`Eliminar ${point.label}`}
+              {points.map((point) => {
+                const isActive = returnPoint?.id === point.id;
+                return (
+                  <li
+                    key={point.id}
+                    className={`return-point-list__item${
+                      isActive ? " return-point-list__item--active" : ""
+                    }`}
                   >
-                    <CloseIcon width={13} height={13} />
-                  </button>
-                </li>
-              ))}
+                    <button className="return-point-list__use" onClick={() => handleUse(point)}>
+                      <span className="return-point-list__content">
+                        <span className="return-point-list__pin-icon">
+                          <PinIcon size={14} />
+                        </span>
+                        {point.label}
+                        {isActive && (
+                          <span className="return-point-list__active-icon">
+                            <CheckIcon size={14} />
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                    <button
+                      className="history-icon-btn history-icon-btn--danger"
+                      onClick={() => handleDelete(point)}
+                      aria-label={`Eliminar ${point.label}`}
+                    >
+                      <CloseIcon width={13} height={13} />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
             {returnPoint && (
               <button
@@ -151,6 +169,7 @@ function ReturnPointSheet({
                   onClose();
                 }}
               >
+                <TrashIcon size={14} />
                 Quitar de esta ruta
               </button>
             )}
