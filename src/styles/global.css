@@ -4,9 +4,12 @@
   --asfalto: #211e1a;        /* texto y franja de carretera */
   --asfalto-claro: #38342e;
   --pavimento: #e9e7e2;      /* fondo: concreto de día */
+  --hairline: #dad6cc;       /* divisores con contraste real sobre --panel-bg */
+  --panel-bg: #f3f1ec;       /* fondo de paneles elevados (offcanvas) */
   --pintura: #f7c600;        /* amarillo pintura vial: acento único */
   --pintura-blanca: #fbfaf7; /* tarjetas: pintura blanca */
   --senal-verde: #1d7a46;    /* verde señal de destino: entregado */
+  --senal-verde-suave: #e6f1eb; /* fondo hover para acciones "entregada" */
   --cono: #d9481c;           /* naranja cono: errores */
   --tinta-suave: #625b4c;    /* oscurecido: #6f6859 quedaba bajo 4.5:1 sobre --pavimento */
   --tinta-clara: #b3ac9c;    /* muted para texto sobre fondos oscuros (--asfalto) */
@@ -177,22 +180,25 @@ input {
   gap: 0;
 }
 
-/* Punto de partida */
+/* Punto de partida — ancla oscura a juego con la cabecera */
 .stop-list-origin {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px 14px;
-  border-bottom: 1px solid var(--pavimento);
-  margin-bottom: 4px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px -6px rgba(33,30,26,0.4);
 }
 
 .sl-origin-info {
   font-family: var(--font-data);
   font-size: 0.72rem;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--tinta-suave);
+  color: var(--tinta-clara);
 }
 
 /* Separadores de sección */
@@ -205,42 +211,55 @@ input {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--tinta-suave);
-  padding: 8px 0 6px;
+  padding: 4px 2px 8px;
+}
+
+.sl-section-label svg {
+  color: var(--senal-verde);
 }
 
 .sl-section-label--pending {
-  margin-top: 4px;
-  padding-top: 12px;
-  border-top: 1px solid var(--pavimento);
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+
+.sl-section-label--pending::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pintura);
 }
 
 /* Grupo de paradas pendientes */
 .sl-pending-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 /* Fila de cada parada */
 .sl-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 3px 0;
   position: relative;
 }
 
 /* Badge numerado */
 .sl-badge {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--asfalto);
   background: var(--pintura);
   margin-top: 10px;
@@ -259,16 +278,19 @@ input {
 }
 
 .sl-badge--origin {
-  background: var(--asfalto);
+  background: rgba(247,198,0,0.14);
   color: var(--pintura);
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   letter-spacing: 0.04em;
+  border: 1.5px solid rgba(247,198,0,0.4);
+  margin-top: 0;
 }
 
 .sl-badge--return {
   background: var(--pintura-blanca);
   border: 2px solid var(--cono);
   color: var(--cono);
+  margin-top: 0;
 }
 
 /* Tarjeta de parada */
@@ -276,20 +298,21 @@ input {
   flex: 1;
   min-width: 0;
   background: var(--pintura-blanca);
-  border-radius: 10px;
-  padding: 10px 12px 10px 14px;
+  border-radius: 14px;
+  padding: 11px 13px 12px 15px;
   border: 1.5px solid transparent;
-  box-shadow: 0 1px 3px rgba(33,30,26,0.07), 0 1px 2px rgba(33,30,26,0.05);
+  box-shadow: 0 1px 2px rgba(33,30,26,0.05), 0 8px 18px -14px rgba(33,30,26,0.5);
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .sl-card--next {
   border-color: var(--pintura);
-  box-shadow: 0 4px 12px rgba(247,198,0,0.25), 0 1px 3px rgba(33,30,26,0.1);
+  background: linear-gradient(180deg, #fffaea 0%, var(--pintura-blanca) 65%);
+  box-shadow: 0 10px 24px -10px rgba(247,198,0,0.45), 0 1px 2px rgba(33,30,26,0.06);
 }
 
 .sl-card--done {
-  opacity: 0.6;
+  opacity: 0.62;
   background: var(--pavimento);
   box-shadow: none;
   position: relative;
@@ -301,31 +324,33 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .sl-card-meta {
   font-family: var(--font-data);
-  font-size: 0.67rem;
-  letter-spacing: 0.12em;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--tinta-suave);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .sl-next-tag {
   background: var(--pintura);
   color: var(--asfalto);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.63rem;
   font-style: normal;
+  letter-spacing: 0.06em;
 }
 
 .sl-leg-km {
   color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Handle de arrastre */
@@ -335,10 +360,10 @@ input {
   justify-content: center;
   color: var(--tinta-clara);
   cursor: grab;
-  padding: 4px;
+  padding: 5px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
@@ -353,11 +378,20 @@ input {
   color: var(--asfalto);
 }
 
-/* Fila del label + botón eliminar */
+/* Fila del label + botón eliminar — línea punteada que confirma que el
+   campo es editable, sólida en foco */
 .sl-card-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  border-bottom: 1.5px dashed var(--hairline);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.sl-card-row:focus-within {
+  border-bottom-color: var(--pintura);
 }
 
 .sl-card-label-input {
@@ -370,12 +404,11 @@ input {
   font-size: 1rem;
   padding: 2px 0;
   color: var(--asfalto);
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .sl-card-label-input:focus {
   outline: none;
-  border-bottom: 2px solid var(--pintura);
 }
 
 .sl-card-label {
@@ -392,11 +425,11 @@ input {
   border: none;
   background: transparent;
   color: var(--tinta-clara);
-  padding: 4px 6px;
+  padding: 5px 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: color 0.15s, background 0.15s;
 }
 
@@ -405,61 +438,76 @@ input {
   background: rgba(217,72,28,0.08);
 }
 
-/* Acciones de la tarjeta */
+/* Acciones de la tarjeta — Navegar es la acción primaria (llena, oscura);
+   Entregada queda secundaria en verde suave para no competir con ella */
 .sl-card-actions {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .sl-btn {
   font-family: var(--font-display);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.78rem;
-  border-radius: var(--radius);
-  padding: 7px 12px;
+  letter-spacing: 0.03em;
+  font-size: 0.76rem;
+  border-radius: 10px;
+  padding: 8px 10px;
   text-decoration: none;
-  border: 1.5px solid currentColor;
+  border: 1.5px solid transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background 0.15s, transform 0.05s;
 }
 
 .sl-btn:hover {
-  opacity: 0.82;
+  opacity: 0.9;
+}
+
+.sl-btn:active {
+  transform: scale(0.97);
 }
 
 .sl-btn--nav {
   background: var(--asfalto);
   color: var(--pintura);
-  border-color: var(--asfalto);
+  box-shadow: 0 3px 8px -2px rgba(33,30,26,0.45);
+}
+
+.sl-btn--nav:hover {
+  background: var(--asfalto-claro);
+  opacity: 1;
 }
 
 .sl-btn--done {
   background: transparent;
   color: var(--senal-verde);
-  border-color: var(--senal-verde);
+  border-color: var(--pavimento);
+}
+
+.sl-btn--done:hover {
+  background: var(--senal-verde-suave);
+  border-color: var(--senal-verde-suave);
+  opacity: 1;
 }
 
 /* Sello entregada */
 .sl-stamp {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%) rotate(-6deg);
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
   color: var(--senal-verde);
   border: 2px solid var(--senal-verde);
-  border-radius: 4px;
+  border-radius: 5px;
   padding: 3px 8px;
   display: inline-flex;
   align-items: center;
@@ -468,14 +516,16 @@ input {
   cursor: pointer;
 }
 
-/* Punto de retorno */
+/* Punto de retorno — tarjeta propia en vez de fila suelta */
 .sl-return-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 0 4px;
-  margin-top: 4px;
-  border-top: 1px solid var(--pavimento);
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--pintura-blanca);
+  border: 1.5px dashed var(--cono);
+  border-radius: 14px;
 }
 
 .sl-return-info {
@@ -497,6 +547,7 @@ input {
   font-size: 0.7rem;
   color: var(--cono);
   letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Legacy: mantener .btn y .stop-* para compatibilidad con otros componentes si los usan */
@@ -1775,7 +1826,7 @@ input {
   right: 10px;
   bottom: 10px;
   width: min(calc(100% - 20px), 440px);
-  background: var(--pavimento);
+  background: var(--panel-bg);
   display: flex;
   flex-direction: column;
   border-radius: 20px;
@@ -1846,6 +1897,18 @@ input {
   color: var(--asfalto);
   background: var(--pintura);
   transform: rotate(90deg);
+}
+
+/* Agregar parada sin cerrar el panel */
+.stops-offcanvas__add {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--pintura-blanca);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.stops-offcanvas__add .add-stop {
+  padding: 0;
 }
 
 .stops-offcanvas__body {

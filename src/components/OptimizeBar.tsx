@@ -5,6 +5,7 @@ import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
+import { showSuccessToast } from "../lib/toast";
 import { CheckIcon, ListIcon, TrackIcon, RouteIcon, TrashIcon } from "./icons";
 
 /** Distingue "permiso bloqueado" (hay que ir a ajustes) de un fallo puntual. */
@@ -137,7 +138,7 @@ export function OptimizeBar({
               onClick={() => {
                 toast.dismiss(t.id);
                 clearRoute();
-                toast.success("Ruta nueva iniciada", {
+                showSuccessToast("Ruta nueva iniciada", {
                   icon: <CheckIcon width={18} height={18} />,
                 });
               }}

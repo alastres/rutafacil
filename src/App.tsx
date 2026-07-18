@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { toast, Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { parseAllLocations, parseSharedText } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
 import { ensurePersistentStorage } from "./lib/historyDb";
+import { showToast } from "./lib/toast";
 import { useRouteStore } from "./state/routeStore";
 import { withLoader } from "./state/loadingStore";
 import { Header } from "./components/Header";
@@ -28,7 +29,7 @@ export default function App() {
   const [moving, setMoving] = useState(false);
 
   const notify = useCallback((text: string, error = false) => {
-    toast(text, {
+    showToast(text, {
       icon: error ? <AlertIcon width={18} height={18} /> : <CheckIcon width={18} height={18} />,
       className: error ? "rht rht--error" : "rht",
     });
@@ -113,14 +114,18 @@ export default function App() {
     <ErrorBoundary>
       <GlobalLoader />
       <Header />
-      <AddStop onSubmit={ingest} onNotify={notify} />
 
-      {/* Controles siempre visibles cuando no hay ruta activa */}
+      {/* Antes de armar una ruta: campo para agregar la primera parada.
+          Una vez hay paradas, agregar más se hace desde el offcanvas
+          (evita duplicar el mismo campo en dos lugares). */}
       {!hasStops && (
-        <div className="controls-bar">
-          <ReturnPointTrigger onNotify={notify} />
-          <ModeSelector />
-        </div>
+        <>
+          <AddStop onSubmit={ingest} onNotify={notify} />
+          <div className="controls-bar">
+            <ReturnPointTrigger onNotify={notify} />
+            <ModeSelector />
+          </div>
+        </>
       )}
 
       {/* Mapa ocupa todo el espacio flexible cuando hay paradas */}
@@ -144,6 +149,8 @@ export default function App() {
           open={showList}
           moving={moving}
           onClose={() => setShowList(false)}
+          onAddStop={ingest}
+          onNotify={notify}
         />
       )}
 
