@@ -350,6 +350,60 @@ export const useRouteStore = create<RouteState>()(
       setReturnPoint: (point) => {
         set({ returnPoint: point, ...invalidated });
         syncHistory(get());
+
+        const { origin, stops, mode } = get();
+        const pending = stops.filter((s) => !s.delivered);
+        // Solo recalculamos si ya se había armado la ruta previamente (hay origen y paradas)
+        if (!origin || pending.length < 1) return;
+
+        void (async () => {
+          const version = get().beginRouteRequest();
+          const trip = await withLoader(() =>
+            tripThroughStreets(origin, pending, {
+              mode,
+              returnPoint: point ?? undefined,
+            }),
+          );
+          if (trip) {
+            const ordered = trip.order.map((i, idx) => ({
+              ...pending[i],
+              legKm: trip.legsKm[idx],
+            }));
+            get().applyOptimization(
+              {
+                ordered,
+                origin,
+                km: trip.distanceKm,
+                durationMin: trip.durationMin,
+                geometry: trip.coordinates,
+                byStreets: true,
+                returnLegKm: trip.returnLegKm ?? null,
+              },
+              version,
+            );
+            return;
+          }
+
+          // Respaldo en línea recta si falla
+          if (version !== get().routeVersion) return;
+          const order = optimizeOrder(origin, pending, point ?? undefined);
+          let prev: LatLng = origin;
+          const ordered = order.map((i) => {
+            const stop = { ...pending[i], legKm: haversineKm(prev, pending[i]) };
+            prev = stop;
+            return stop;
+          });
+          let km = ordered.reduce((sum, s) => sum + (s.legKm ?? 0), 0);
+          let returnLegKm: number | null = null;
+          if (point) {
+            returnLegKm = haversineKm(prev, point);
+            km += returnLegKm;
+          }
+          get().applyOptimization(
+            { ordered, origin, km, durationMin: null, geometry: null, byStreets: false, returnLegKm },
+            version,
+          );
+        })();
       },
 
       setHistoryLabel: async (label) => {

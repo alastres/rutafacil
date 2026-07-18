@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useReturnPointsStore } from "../state/returnPointsStore";
@@ -101,7 +102,7 @@ function ReturnPointSheet({
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className="history-overlay"
       role="dialog"
@@ -160,6 +161,7 @@ function ReturnPointSheet({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

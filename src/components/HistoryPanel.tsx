@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
@@ -45,7 +46,7 @@ export function HistoryPanel() {
       >
         <FaClockRotateLeft size={18} />
       </button>
-      {open && (
+      {open && createPortal(
         <div
           className="history-overlay"
           role="dialog"
@@ -84,7 +85,8 @@ export function HistoryPanel() {
               </p>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {detailRecord && (
         <RouteDetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />

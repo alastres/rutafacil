@@ -197,8 +197,9 @@ export default function MapView() {
     };
   }, [tracking]);
 
-  // Mueve el marcador a la posición en vivo y sigue la cámara (solo si el
-  // usuario se sale del viewport, para no pelear con el paneo manual).
+  // Mueve el marcador a la posición en vivo, sigue la cámara (solo si el
+  // usuario se sale del viewport, para no pelear con el paneo manual) y
+  // actualiza dinámicamente el trayecto en amarillo recortando los tramos pasados.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || map !== mapRef.current) return;
@@ -227,10 +228,43 @@ export default function MapView() {
       } else {
         map.once("load", follow);
       }
+
+      // Recorta el trayecto en amarillo que ya pasó
+      const source = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
+      if (source) {
+        const fullCoordinates =
+          geometry ??
+          stops.filter((s) => !s.delivered).map((s) => [s.lng, s.lat] as [number, number]);
+
+        if (fullCoordinates.length > 0) {
+          // Encuentra el índice de la coordenada más cercana al usuario
+          let minIndex = 0;
+          let minDistance = Infinity;
+          for (let i = 0; i < fullCoordinates.length; i++) {
+            const [lng, lat] = fullCoordinates[i];
+            const dx = lng - pos.lng;
+            const dy = lat - pos.lat;
+            const dist = dx * dx + dy * dy;
+            if (dist < minDistance) {
+              minDistance = dist;
+              minIndex = i;
+            }
+          }
+          const sliced = fullCoordinates.slice(minIndex);
+          source.setData({
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [[pos.lng, pos.lat], ...sliced],
+            },
+            properties: {},
+          });
+        }
+      }
     } catch {
       // Nunca debe romper la app por un ajuste de seguimiento
     }
-  }, [live, tracking]);
+  }, [live, tracking, geometry, stops]);
 
   // Incidencias de tráfico (TomTom) — solo si hay llave configurada
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { CloseIcon, CheckIcon } from "./icons";
 import { MODES } from "./ModeSelector";
 import { formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
@@ -25,7 +26,7 @@ export function RouteDetailModal({
   const stops = record.stops ?? [];
   const modeMeta = MODES.find((m) => m.value === record.mode);
 
-  return (
+  return createPortal(
     <div
       className="history-overlay"
       role="dialog"
@@ -125,6 +126,7 @@ export function RouteDetailModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
