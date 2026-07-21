@@ -33,7 +33,9 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
 export default function MapView() {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const stopsMarkersRef = useRef<Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>>(new Map());
+  const originMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const returnMarkerRef = useRef<maplibregl.Marker | null>(null);
   const liveMarkerRef = useRef<maplibregl.Marker | null>(null);
   const stops = useRouteStore((s) => s.stops);
   const origin = useRouteStore((s) => s.origin);
@@ -77,7 +79,12 @@ export default function MapView() {
     return () => {
       map.remove();
       mapRef.current = null;
-      markersRef.current = [];
+      stopsMarkersRef.current.forEach(({ marker }) => marker.remove());
+      stopsMarkersRef.current.clear();
+      originMarkerRef.current?.remove();
+      originMarkerRef.current = null;
+      returnMarkerRef.current?.remove();
+      returnMarkerRef.current = null;
       liveMarkerRef.current?.remove();
       liveMarkerRef.current = null;
     };
@@ -88,35 +95,79 @@ export default function MapView() {
     const map = mapRef.current;
     if (!map) return;
 
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = stops.map((stop, i) => {
-      const el = document.createElement("div");
-      el.className = `map-marker${stop.delivered ? " is-delivered" : ""}`;
-      if (stop.delivered) el.innerHTML = CHECK_SVG_MARKUP;
-      else el.textContent = String(i + 1);
-      return new maplibregl.Marker({ element: el })
-        .setLngLat([stop.lng, stop.lat])
-        .addTo(map);
+    // --- Diffing de paradas ---
+    const activeIds = new Set(stops.map((s) => s.id));
+    const currentMap = stopsMarkersRef.current;
+
+    // Eliminar marcadores de paradas borradas
+    currentMap.forEach(({ marker }, id) => {
+      if (!activeIds.has(id)) {
+        marker.remove();
+        currentMap.delete(id);
+      }
     });
+
+    // Crear o actualizar marcadores para paradas actuales
+    stops.forEach((stop, i) => {
+      const existing = currentMap.get(stop.id);
+      const className = `map-marker${stop.delivered ? " is-delivered" : ""}`;
+      const content = stop.delivered ? CHECK_SVG_MARKUP : String(i + 1);
+
+      if (existing) {
+        existing.marker.setLngLat([stop.lng, stop.lat]);
+        if (existing.el.className !== className) {
+          existing.el.className = className;
+        }
+        if (existing.el.innerHTML !== content && existing.el.textContent !== content) {
+          if (stop.delivered) existing.el.innerHTML = content;
+          else existing.el.textContent = content;
+        }
+      } else {
+        const el = document.createElement("div");
+        el.className = className;
+        if (stop.delivered) el.innerHTML = content;
+        else el.textContent = content;
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([stop.lng, stop.lat])
+          .addTo(map);
+
+        currentMap.set(stop.id, { marker, el });
+      }
+    });
+
+    // --- Marcador de origen ---
     if (origin && !tracking) {
-      const el = document.createElement("div");
-      el.className = "map-marker is-origin";
-      el.textContent = "TÚ";
-      markersRef.current.push(
-        new maplibregl.Marker({ element: el })
+      if (originMarkerRef.current) {
+        originMarkerRef.current.setLngLat([origin.lng, origin.lat]);
+      } else {
+        const el = document.createElement("div");
+        el.className = "map-marker is-origin";
+        el.textContent = "TÚ";
+        originMarkerRef.current = new maplibregl.Marker({ element: el })
           .setLngLat([origin.lng, origin.lat])
-          .addTo(map),
-      );
+          .addTo(map);
+      }
+    } else {
+      originMarkerRef.current?.remove();
+      originMarkerRef.current = null;
     }
+
+    // --- Marcador de retorno ---
     if (returnPoint) {
-      const el = document.createElement("div");
-      el.className = "map-marker is-return";
-      el.innerHTML = PIN_SVG_MARKUP;
-      markersRef.current.push(
-        new maplibregl.Marker({ element: el })
+      if (returnMarkerRef.current) {
+        returnMarkerRef.current.setLngLat([returnPoint.lng, returnPoint.lat]);
+      } else {
+        const el = document.createElement("div");
+        el.className = "map-marker is-return";
+        el.innerHTML = PIN_SVG_MARKUP;
+        returnMarkerRef.current = new maplibregl.Marker({ element: el })
           .setLngLat([returnPoint.lng, returnPoint.lat])
-          .addTo(map),
-      );
+          .addTo(map);
+      }
+    } else {
+      returnMarkerRef.current?.remove();
+      returnMarkerRef.current = null;
     }
 
     const updateLine = () => {

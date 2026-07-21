@@ -1,7 +1,7 @@
-import "@fontsource/overpass/700.css";
-import "@fontsource/overpass/900.css";
-import "@fontsource/atkinson-hyperlegible/400.css";
-import "@fontsource/atkinson-hyperlegible/700.css";
+import "@fontsource/overpass/latin-700.css";
+import "@fontsource/overpass/latin-900.css";
+import "@fontsource/atkinson-hyperlegible/latin-400.css";
+import "@fontsource/atkinson-hyperlegible/latin-700.css";
 import "./styles/global.css";
 
 import { StrictMode } from "react";

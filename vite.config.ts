@@ -41,6 +41,59 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icons/icon.svg"],
       manifest,
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/World_Street_Map\/MapServer\/tile\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "esri-tiles-cache",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/(routing\.openstreetmap\.de|router\.project-osrm\.org)\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "osrm-route-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/maplibre-gl")) {
+            return "vendor-maplibre";
+          }
+          if (id.includes("node_modules/motion")) {
+            return "vendor-motion";
+          }
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/zustand/")
+          ) {
+            return "vendor-react";
+          }
+        },
+      },
+    },
+  },
 });

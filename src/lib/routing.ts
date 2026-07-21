@@ -259,6 +259,10 @@ async function tripMapbox(
   }
 }
 
+const routeCache = new Map<string, { result: TripResult; timestamp: number }>();
+const CACHE_MAX_ENTRIES = 50;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
 export async function tripThroughStreets(
   origin: LatLng,
   stops: LatLng[],
@@ -267,7 +271,15 @@ export async function tripThroughStreets(
   const { timeoutMs = 12000, mode = "car", returnPoint, optimize = true } = opts;
   if (stops.length === 0) return null;
 
+  const cacheKey = `${mode}:${optimize}:${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}|${stops.map((s) => `${s.lat.toFixed(5)},${s.lng.toFixed(5)}`).join(";")}|${returnPoint ? `${returnPoint.lat.toFixed(5)},${returnPoint.lng.toFixed(5)}` : ""}`;
+  const now = Date.now();
+  const cached = routeCache.get(cacheKey);
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return cached.result;
+  }
+
   const profile = OSRM_PROFILE[mode];
+  let resResult: TripResult | null = null;
 
   if (ROUTING_PROVIDER === "mapbox") {
     const viaMapbox = await tripMapbox(
@@ -278,17 +290,30 @@ export async function tripThroughStreets(
       returnPoint,
       optimize,
     );
-    if (viaMapbox) return viaMapbox;
-    // Sin llave válida o fallo → cae a OSRM gratis
+    if (viaMapbox) resResult = viaMapbox;
   }
 
-  for (const base of osrmBasesFor(mode)) {
-    const result = optimize
-      ? await tryBase(base, origin, stops, timeoutMs, profile, returnPoint)
-      : await tryRouteBase(base, origin, stops, timeoutMs, profile, returnPoint);
-    if (result) return result;
+  if (!resResult) {
+    for (const base of osrmBasesFor(mode)) {
+      const result = optimize
+        ? await tryBase(base, origin, stops, timeoutMs, profile, returnPoint)
+        : await tryRouteBase(base, origin, stops, timeoutMs, profile, returnPoint);
+      if (result) {
+        resResult = result;
+        break;
+      }
+    }
   }
-  return null;
+
+  if (resResult) {
+    if (routeCache.size >= CACHE_MAX_ENTRIES) {
+      const firstKey = routeCache.keys().next().value;
+      if (firstKey) routeCache.delete(firstKey);
+    }
+    routeCache.set(cacheKey, { result: resResult, timestamp: now });
+  }
+
+  return resResult;
 }
 
 export interface Incident {
