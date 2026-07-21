@@ -1,7 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { activeOverlays } from "../lib/overlays";
-import { toast } from "react-hot-toast";
 import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
 import { useHistoryStore } from "../state/historyStore";
 import { useRouteStore } from "../state/routeStore";
@@ -13,7 +12,8 @@ import {
 } from "../lib/historyDb";
 import { CloseIcon } from "./icons";
 import { RouteDetailModal } from "./RouteDetailModal";
-import { ConfirmToast } from "./ConfirmToast";
+import { showConfirm } from "./ConfirmToast";
+import { showSuccessToast } from "../lib/toast";
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleString("es-CO", {
@@ -74,22 +74,19 @@ export function HistoryPanel() {
   const handleDeleteSelected = () => {
     const ids = [...selected];
     if (ids.length === 0) return;
-    toast(
-      (t) => (
-        <ConfirmToast
-          t={t}
-          message={`¿Eliminar ${ids.length} ruta${ids.length > 1 ? "s" : ""} del historial? No se puede deshacer.`}
-          confirmText="Eliminar"
-          onConfirm={() => {
-            if (activeHistoryId && ids.includes(activeHistoryId)) {
-              detachHistory(activeHistoryId);
-            }
-            void removeMany(ids).then(exitSelectMode);
-          }}
-        />
-      ),
-      { duration: Infinity, className: "confirm-toast" },
-    );
+    const count = ids.length;
+    showConfirm({
+      message: `¿Eliminar ${count} ruta${count > 1 ? "s" : ""} del historial? No se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm: async () => {
+        if (activeHistoryId && ids.includes(activeHistoryId)) {
+          detachHistory(activeHistoryId);
+        }
+        await removeMany(ids);
+        exitSelectMode();
+        showSuccessToast(`${count} ruta${count > 1 ? "s eliminadas" : " eliminada"} del historial`);
+      },
+    });
   };
 
   return (
@@ -230,20 +227,15 @@ function HistoryItem({
   };
 
   const handleDelete = () => {
-    toast(
-      (t) => (
-        <ConfirmToast
-          t={t}
-          message={`¿Eliminar “${record.label}” del historial? No se puede deshacer.`}
-          confirmText="Eliminar"
-          onConfirm={() => {
-            if (isActive) detachHistory(record.id);
-            void remove(record.id);
-          }}
-        />
-      ),
-      { duration: Infinity, className: "confirm-toast" },
-    );
+    showConfirm({
+      message: `¿Eliminar “${record.label}” del historial? No se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm: async () => {
+        if (isActive) detachHistory(record.id);
+        await remove(record.id);
+        showSuccessToast(`Ruta “${record.label}” eliminada del historial`);
+      },
+    });
   };
 
   return (

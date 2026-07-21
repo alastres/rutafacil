@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { toast } from "react-hot-toast";
-import { ConfirmToast } from "./ConfirmToast";
+import { showConfirm } from "./ConfirmToast";
 import { getPosition, haversineKm, type LatLng } from "../lib/geo";
 import { optimizeOrder } from "../lib/tsp";
 import { tripThroughStreets } from "../lib/routing";
@@ -127,22 +126,16 @@ export function OptimizeBar({
   };
 
   const handleClear = () => {
-    toast(
-      (t) => (
-        <ConfirmToast
-          t={t}
-          message="¿Borrar todas las paradas y empezar una ruta nueva?"
-          confirmText="Borrar todo"
-          onConfirm={() => {
-            clearRoute();
-            showSuccessToast("Ruta nueva iniciada", {
-              icon: <CheckIcon width={18} height={18} />,
-            });
-          }}
-        />
-      ),
-      { duration: Infinity, className: "confirm-toast" },
-    );
+    showConfirm({
+      message: "¿Borrar todas las paradas y empezar una ruta nueva?",
+      confirmText: "Borrar todo",
+      onConfirm: () => {
+        clearRoute();
+        showSuccessToast("Ruta nueva iniciada", {
+          icon: <CheckIcon width={18} height={18} />,
+        });
+      },
+    });
   };
 
   if (stops.length === 0) return null;

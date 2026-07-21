@@ -1105,6 +1105,29 @@ input {
 }
 
 /* Modal de confirmación tipo cartel de obra */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: confirmFadeIn 0.15s ease-out;
+}
+
+@keyframes confirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .confirm-toast {
   background: var(--asfalto) !important;
   color: var(--pintura-blanca);
@@ -1116,9 +1139,29 @@ input {
 }
 
 .confirm-modal {
-  padding: 18px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border: 3px solid var(--asfalto);
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  animation: confirmScaleIn 0.15s ease-out;
 }
+
+@keyframes confirmScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 
 .confirm-modal__text {
   font-family: var(--font-display);

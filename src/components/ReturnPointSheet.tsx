@@ -1,8 +1,8 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { activeOverlays } from "../lib/overlays";
-import { toast } from "react-hot-toast";
-import { ConfirmToast } from "./ConfirmToast";
+import { showConfirm } from "./ConfirmToast";
+import { showSuccessToast } from "../lib/toast";
 import { useReturnPointsStore } from "../state/returnPointsStore";
 import { useRouteStore } from "../state/routeStore";
 import type { SavedReturnPoint } from "../lib/historyDb";
@@ -72,20 +72,15 @@ function ReturnPointSheet({
   };
 
   const handleDelete = (point: SavedReturnPoint) => {
-    toast(
-      (t) => (
-        <ConfirmToast
-          t={t}
-          message={`¿Eliminar “${point.label}”? No se puede deshacer.`}
-          confirmText="Eliminar"
-          onConfirm={() => {
-            void remove(point.id);
-            if (returnPoint?.id === point.id) setReturnPoint(null);
-          }}
-        />
-      ),
-      { duration: Infinity, className: "confirm-toast" },
-    );
+    showConfirm({
+      message: `¿Eliminar “${point.label}”? No se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm: async () => {
+        await remove(point.id);
+        if (returnPoint?.id === point.id) setReturnPoint(null);
+        showSuccessToast(`Punto de retorno “${point.label}” eliminado`);
+      },
+    });
   };
 
   const handleSave = async (input: { label: string; lat: number; lng: number }) => {
