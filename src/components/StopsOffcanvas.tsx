@@ -4,6 +4,7 @@ import { RoadList } from "./RoadList";
 import { AddStop } from "./AddStop";
 import { CloseIcon, ListIcon } from "./icons";
 import { activeOverlays } from "../lib/overlays";
+import { AdBanner } from "./AdBanner";
 
 export function StopsOffcanvas({
   open,
@@ -63,6 +64,7 @@ export function StopsOffcanvas({
 
         <div className="stops-offcanvas__body">
           <RoadList moving={moving} />
+          <AdBanner slotId="stops-drawer-bottom" />
         </div>
       </div>
     </div>,

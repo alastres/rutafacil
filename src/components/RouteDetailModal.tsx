@@ -7,6 +7,7 @@ import { formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
 import { generateSingleRouteReport, shareText } from "../lib/share";
 import { FaShareNodes } from "react-icons/fa6";
 import RouteDetailMap from "./RouteDetailMap";
+import { AdBanner } from "./AdBanner";
 
 function formatDateFull(ts?: number | null): string {
   if (!ts) return "—";
@@ -164,6 +165,7 @@ export function RouteDetailModal({
               Esta ruta no tiene paradas registradas en el historial.
             </p>
           )}
+          <AdBanner slotId="route-detail-bottom" />
         </div>
       </div>
     </div>,

@@ -15,6 +15,7 @@ import { CloseIcon } from "./icons";
 import { RouteDetailModal } from "./RouteDetailModal";
 import { showConfirm } from "./ConfirmToast";
 import { showSuccessToast } from "../lib/toast";
+import { AdBanner } from "./AdBanner";
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleString("es-CO", {
@@ -193,6 +194,8 @@ export function HistoryPanel() {
                   : "Almacenamiento no marcado como persistente todavía (algunos navegadores lo conceden solo con la app instalada o de más uso)."}
               </p>
             )}
+
+            <AdBanner slotId="history-bottom" />
           </div>
         </div>,
         document.body

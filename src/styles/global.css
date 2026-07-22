@@ -2682,3 +2682,14 @@ input {
   flex-shrink: 0;
 }
 
+/* ============ Contenedor de Anuncios / Monetización ============ */
+.ad-banner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
