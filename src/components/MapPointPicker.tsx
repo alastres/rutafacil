@@ -56,9 +56,11 @@ export function MapPointPicker({
     let userMoved = false;
     const onMove = () => {
       const c = map.getCenter();
-      centerRef.current = { lat: c.lat, lng: c.lng };
-      setLocating(false);
-      forceRender((n) => n + 1);
+      if (c && typeof c.lat === "number" && typeof c.lng === "number" && !isNaN(c.lat) && !isNaN(c.lng)) {
+        centerRef.current = { lat: c.lat, lng: c.lng };
+        setLocating(false);
+        forceRender((n) => n + 1);
+      }
     };
     const markUserMoved = () => {
       userMoved = true;
@@ -96,7 +98,14 @@ export function MapPointPicker({
   }, []);
 
   return (
-    <div className="point-picker">
+    <div
+      className="point-picker"
+      onTouchStart={(e) => {
+        if (e.touches.length > 1) {
+          e.stopPropagation();
+        }
+      }}
+    >
       <div className="point-picker__map" ref={container} />
       <div className="point-picker__pin" aria-hidden="true">
         <PinIcon size={30} />
@@ -104,7 +113,9 @@ export function MapPointPicker({
       <div className="point-picker__coords">
         {locating
           ? "Buscando tu ubicación…"
-          : `${centerRef.current.lat.toFixed(5)}, ${centerRef.current.lng.toFixed(5)}`}
+          : typeof centerRef.current?.lat === "number" && !isNaN(centerRef.current.lat)
+          ? `${centerRef.current.lat.toFixed(5)}, ${centerRef.current.lng.toFixed(5)}`
+          : "Fijando ubicación…"}
       </div>
       <div className="point-picker__actions">
         <button type="button" className="btn btn--ghost" onClick={onCancel}>
