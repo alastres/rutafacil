@@ -176,13 +176,13 @@ export default function App() {
           <PWAInstallBanner />
 
           <Toaster
-            position="top-center"
-            containerStyle={{ top: 16, left: 0, right: 0, zIndex: 10001 }}
+            position="bottom-center"
+            containerStyle={{ bottom: 92, left: 0, right: 0, zIndex: 9999 }}
             toastOptions={{
               duration: 4000,
               className: "rht",
               style: {
-                zIndex: 10001,
+                zIndex: 9999,
                 background: "var(--asfalto)",
                 color: "var(--pintura-blanca)",
                 borderLeft: "6px solid var(--pintura)",
