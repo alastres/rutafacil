@@ -1,13 +1,13 @@
 /**
  * Módulo de Síntesis de Voz (Web Speech API) para navegación asistida in-app.
- * Totalmente gratuito, offline y compatible con navegadores móviles.
+ * Totalmente gratuito, offline y compatible con iOS (Siri TTS) y Android.
  */
 
 let muted = false;
 let lastSpokenText = "";
 let lastSpokenTime = 0;
 
-const DUP_COOLDOWN_MS = 8000;
+const DUP_COOLDOWN_MS = 6000;
 
 export function isSpeechSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
@@ -31,7 +31,7 @@ export function toggleMuted(): boolean {
 
 /**
  * Emite una instrucción de voz en español si el audio no está silenciado.
- * Evita repetir la misma frase consecutivamente en un período corto.
+ * Compatible con el motor Siri de iOS y síntesis nativa de Android/Chrome.
  */
 export function speak(text: string, force = false): void {
   if (muted || !isSpeechSupported()) return;
@@ -44,15 +44,20 @@ export function speak(text: string, force = false): void {
   try {
     window.speechSynthesis.cancel(); // Detener frase anterior si estaba hablando
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "es-ES";
+    utterance.lang = "es-CO";
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
-    // Intentar buscar una voz en español disponible
     const voices = window.speechSynthesis.getVoices();
-    const esVoice = voices.find((v) => v.lang.startsWith("es"));
-    if (esVoice) {
-      utterance.voice = esVoice;
+    if (voices && voices.length > 0) {
+      const esVoice = voices.find(
+        (v) =>
+          v.lang.startsWith("es-CO") ||
+          v.lang.startsWith("es-MX") ||
+          v.lang.startsWith("es-ES") ||
+          v.lang.startsWith("es")
+      );
+      if (esVoice) utterance.voice = esVoice;
     }
 
     lastSpokenText = text;
@@ -68,4 +73,11 @@ export function stopSpeech(): void {
   if (isSpeechSupported()) {
     window.speechSynthesis.cancel();
   }
+}
+
+// Cargar voces en segundo plano para iOS Safari
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+  };
 }

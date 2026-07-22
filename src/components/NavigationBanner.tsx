@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouteStore } from "../state/routeStore";
 import { haversineKm } from "../lib/geo";
-import { isMuted, toggleMuted } from "../lib/speech";
+import { isMuted, toggleMuted, speak } from "../lib/speech";
 import { ArrowRightIcon, CheckIcon, CloseIcon } from "./icons";
 import { VolumeIcon, MuteIcon } from "./icons";
 
@@ -41,6 +41,9 @@ export function NavigationBanner() {
   const handleToggleVoice = () => {
     const newState = toggleMuted();
     setMutedState(newState);
+    if (!newState) {
+      speak("Voz de navegación activada", true);
+    }
   };
 
   const handleDeliver = () => {

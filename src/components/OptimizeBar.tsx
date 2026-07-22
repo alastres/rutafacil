@@ -7,6 +7,7 @@ import { useRouteStore, type Stop } from "../state/routeStore";
 import { withLoader } from "../state/loadingStore";
 import { showSuccessToast } from "../lib/toast";
 import { CheckIcon, ListIcon, TrackIcon, RouteIcon, TrashIcon } from "./icons";
+import { speak } from "../lib/speech";
 
 /** Distingue "permiso bloqueado" (hay que ir a ajustes) de un fallo puntual. */
 async function geolocationDenied(): Promise<boolean> {
@@ -148,7 +149,14 @@ export function OptimizeBar({
       </button>
       <button
         className={`btn-track bottom-bar-btn${tracking ? " is-on" : ""}`}
-        onClick={() => (tracking ? stopTracking() : startTracking())}
+        onClick={() => {
+          if (tracking) {
+            stopTracking();
+          } else {
+            speak("Iniciando seguimiento de ruta", true);
+            startTracking();
+          }
+        }}
         disabled={busy || optimizedKm === null}
         title="Seguir mi ubicación en tiempo real y recalcular si me desvío"
       >
