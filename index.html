@@ -1,36 +1,35 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#211E1A" />
-    <meta name="color-scheme" content="light" />
-    <!-- Verificación y Tag de Anuncios Monetag -->
-    <meta name="monetag" content="b1f3d5cb0f7be09f8af68aab4f7d4cd3" />
-    <script src="https://quge5.com/88/tag.min.js" data-zone="262672" async data-cfasync="false"></script>
-    <meta
-      name="description"
-      content="Comparte ubicaciones desde WhatsApp y arma la ruta de entregas más corta."
-    />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <title>RutaFácil — tu ruta de entregas, optimizada</title>
-  </head>
-  <body>
-    <div id="root">
-      <div class="initial-loader-container">
-        <div class="initial-loader-logo-container">
-          <img src="/icons/icon-192.png" class="initial-loader-icon" alt="RutaFácil" />
-          <div class="initial-loader-spinner"></div>
-        </div>
-        <div class="initial-loader-text">Cargando <span id="load-pct">0</span>%</div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#211E1A" />
+  <meta name="color-scheme" content="light" />
+  <!-- Verificación y Tag de Anuncios Monetag -->
+  <meta name="monetag" content="b1f3d5cb0f7be09f8af68aab4f7d4cd3" />
+  <script>(function (s) { s.dataset.zone = '11374548', s.src = 'https://n6wxm.com/vignette.min.js' })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <meta name="description" content="Comparte ubicaciones desde WhatsApp y arma la ruta de entregas más corta." />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <title>RutaFácil — tu ruta de entregas, optimizada</title>
+</head>
+
+<body>
+  <div id="root">
+    <div class="initial-loader-container">
+      <div class="initial-loader-logo-container">
+        <img src="/icons/icon-192.png" class="initial-loader-icon" alt="RutaFácil" />
+        <div class="initial-loader-spinner"></div>
       </div>
-      <script>
-        (function() {
+      <div class="initial-loader-text">Cargando <span id="load-pct">0</span>%</div>
+    </div>
+    <script>
+        (function () {
           var pctEl = document.getElementById('load-pct');
           var currentPct = 0;
-          var interval = setInterval(function() {
+          var interval = setInterval(function () {
             if (currentPct < 90) {
               currentPct += Math.floor(Math.random() * 15) + 5;
               if (currentPct > 90) currentPct = 90;
@@ -39,69 +38,76 @@
             }
             if (pctEl) pctEl.textContent = currentPct;
           }, 180);
-          
-          window.addEventListener('load', function() {
+
+          window.addEventListener('load', function () {
             clearInterval(interval);
             if (pctEl) pctEl.textContent = "100";
           });
         })();
-      </script>
-      <style>
-        body {
-          margin: 0;
-          background-color: #E9E7E2;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    </script>
+    <style>
+      body {
+        margin: 0;
+        background-color: #E9E7E2;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      .initial-loader-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        max-width: 480px;
+        margin: 0 auto;
+        box-sizing: border-box;
+        padding: 20px;
+      }
+
+      .initial-loader-logo-container {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+      }
+
+      .initial-loader-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        padding: 4px;
+        background-color: #211e1a;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .initial-loader-spinner {
+        position: absolute;
+        inset: 0;
+        border: 4px solid #d1cdb8;
+        border-top-color: #f7c600;
+        border-radius: 50%;
+        animation: initial-spin 1.2s linear infinite;
+      }
+
+      .initial-loader-text {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #625b4c;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @keyframes initial-spin {
+        to {
+          transform: rotate(360deg);
         }
-        .initial-loader-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          max-width: 480px;
-          margin: 0 auto;
-          box-sizing: border-box;
-          padding: 20px;
-        }
-        .initial-loader-logo-container {
-          position: relative;
-          width: 96px;
-          height: 96px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 24px;
-        }
-        .initial-loader-icon {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          padding: 4px;
-          background-color: #211e1a;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        .initial-loader-spinner {
-          position: absolute;
-          inset: 0;
-          border: 4px solid #d1cdb8;
-          border-top-color: #f7c600;
-          border-radius: 50%;
-          animation: initial-spin 1.2s linear infinite;
-        }
-        .initial-loader-text {
-          font-size: 0.85rem;
-          font-weight: bold;
-          color: #625b4c;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-        @keyframes initial-spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      </style>
-    </div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+      }
+    </style>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
