@@ -42,6 +42,7 @@ export default defineConfig({
       includeAssets: ["icons/icon.svg"],
       manifest,
       workbox: {
+        importScripts: ["/sw-monetag.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/World_Street_Map\/MapServer\/tile\/.*/i,
