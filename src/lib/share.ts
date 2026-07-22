@@ -14,7 +14,7 @@ export function formatDateFull(ts: number): string {
 }
 
 /**
- * Genera el texto del reporte individual de rendición para una ruta completada o en curso (sin emojis).
+ * Genera el texto formateado para WhatsApp del reporte individual de rendición.
  */
 export function generateSingleRouteReport(record: RouteHistoryRecord): string {
   const stops = record.stops ?? [];
@@ -33,30 +33,30 @@ export function generateSingleRouteReport(record: RouteHistoryRecord): string {
   const distanceStr = typeof record.distanceKm === "number" && !isNaN(record.distanceKm) ? `${record.distanceKm.toFixed(1)} km` : "N/A";
   const durationStr = typeof record.elapsedMs === "number" && !isNaN(record.elapsedMs) ? formatElapsed(record.elapsedMs) : "N/A";
 
-  let msg = `=== REPORTES DE RENDICION DE DESPACHO ===\n`;
-  msg += `Ruta: ${label}\n`;
-  msg += `Vehiculo: ${record.mode.toUpperCase()} | Distancia: ${distanceStr} | Duracion: ${durationStr}\n\n`;
+  let msg = `📊 *RENDICIÓN DE DESPACHO Y RECORRIDO*\n`;
+  msg += `📋 *Ruta:* ${label}\n`;
+  msg += `🚘 *Vehículo:* ${record.mode.toUpperCase()} | 📏 *Distancia:* ${distanceStr} | ⏱️ *Duración:* ${durationStr}\n\n`;
 
   msg += `----------------------------------------\n`;
-  msg += `(+) Total Cobrado: ${formatCurrency(totalCollect)}\n`;
-  msg += `(-) Total Viaticos: ${formatCurrency(totalAllowance)}\n`;
-  msg += `(=) BALANCE NETO A ENTREGAR: ${formatCurrency(netBalance)}\n`;
+  msg += `💵 *Total Cobrado:* ${formatCurrency(totalCollect)}\n`;
+  msg += `⛽ *Total Viáticos Otorgados:* ${formatCurrency(totalAllowance)}\n`;
+  msg += `💰 *BALANCE NETO A ENTREGAR:* ${formatCurrency(netBalance)}\n`;
   msg += `----------------------------------------\n\n`;
 
-  msg += `DETALLE DE PARADAS (${deliveredStops.length}/${record.stopsTotal}):\n`;
+  msg += `✅ *DETALLE DE ENTREGAS (${deliveredStops.length}/${record.stopsTotal}):*\n`;
 
   if (stops.length === 0) {
     msg += `(Sin desglose de paradas registrado)\n`;
   } else {
     stops.forEach((s, idx) => {
-      const statusTag = s.delivered ? "[OK]" : "[PENDIENTE]";
+      const statusIcon = s.delivered ? "✅" : "⏳";
       const timeStr = s.deliveredAt ? `[${formatDateShort(s.deliveredAt)}] ` : "";
-      msg += `${statusTag} ${idx + 1}. ${timeStr}${s.label}`;
+      msg += `${statusIcon} ${idx + 1}. ${timeStr}${s.label}`;
       
       const extras: string[] = [];
-      if (typeof s.collectAmount === "number" && s.collectAmount > 0) extras.push(`Cobro: ${formatCurrency(s.collectAmount)}`);
-      if (typeof s.travelAllowance === "number" && s.travelAllowance > 0) extras.push(`Viaticos: ${formatCurrency(s.travelAllowance)}`);
-      if (s.notes) extras.push(`Nota: ${s.notes}`);
+      if (typeof s.collectAmount === "number" && s.collectAmount > 0) extras.push(`💵 ${formatCurrency(s.collectAmount)}`);
+      if (typeof s.travelAllowance === "number" && s.travelAllowance > 0) extras.push(`⛽ ${formatCurrency(s.travelAllowance)}`);
+      if (s.notes) extras.push(`📝 ${s.notes}`);
 
       if (extras.length > 0) {
         msg += ` (${extras.join(" | ")})`;
@@ -65,12 +65,12 @@ export function generateSingleRouteReport(record: RouteHistoryRecord): string {
     });
   }
 
-  msg += `\nRutaFacil App`;
+  msg += `\n🚀 *Generado desde RutaFácil*`;
   return msg;
 }
 
 /**
- * Genera el reporte consolidado por lotes (Batch Share) para múltiples rutas seleccionadas con desglose completo.
+ * Genera el reporte consolidado por lotes (Batch Share) para WhatsApp con desglose enriquecido y emojis.
  */
 export function generateBatchRouteReport(records: RouteHistoryRecord[]): string {
   if (records.length === 0) return "No hay rutas seleccionadas.";
@@ -99,17 +99,17 @@ export function generateBatchRouteReport(records: RouteHistoryRecord[]): string 
   const grandNetBalance = grandTotalCollect - grandTotalAllowance;
   const reportDate = formatDateFull(Date.now());
 
-  let msg = `=== CONSOLIDADO GLOBAL DE DESPACHOS (${records.length} RUTAS) ===\n`;
-  msg += `Fecha de Reporte: ${reportDate}\n`;
-  msg += `Recorrido Total: ${totalDistanceKm.toFixed(1)} km | Entregas Totales: ${totalDeliveredCount}/${totalStopsCount}\n\n`;
+  let msg = `📑 *CONSOLIDADO GLOBAL DE DESPACHOS (${records.length} RUTAS)*\n`;
+  msg += `📅 *Fecha:* ${reportDate}\n`;
+  msg += `🛣️ *Recorrido Total:* ${totalDistanceKm.toFixed(1)} km | 📦 *Entregas:* ${totalDeliveredCount}/${totalStopsCount}\n\n`;
 
   msg += `========================================\n`;
-  msg += `(+) TOTAL COBRADO ACUMULADO: ${formatCurrency(grandTotalCollect)}\n`;
-  msg += `(-) TOTAL VIATICOS ACUMULADOS: ${formatCurrency(grandTotalAllowance)}\n`;
-  msg += `(=) BALANCE GENERAL A ENTREGAR: ${formatCurrency(grandNetBalance)}\n`;
+  msg += `💵 *TOTAL COBRADO ACUMULADO:* ${formatCurrency(grandTotalCollect)}\n`;
+  msg += `⛽ *TOTAL VIÁTICOS ACUMULADOS:* ${formatCurrency(grandTotalAllowance)}\n`;
+  msg += `💰 *BALANCE GENERAL A ENTREGAR:* ${formatCurrency(grandNetBalance)}\n`;
   msg += `========================================\n\n`;
 
-  msg += `DESGLOSE DETALLADO POR RUTA:\n\n`;
+  msg += `📋 *DESGLOSE DETALLADO POR RUTA:*\n\n`;
 
   records.forEach((r, idx) => {
     let rCollect = 0;
@@ -124,23 +124,23 @@ export function generateBatchRouteReport(records: RouteHistoryRecord[]): string 
     const distStr = typeof r.distanceKm === "number" && !isNaN(r.distanceKm) ? `${r.distanceKm.toFixed(1)} km` : "N/A";
     const durStr = typeof r.elapsedMs === "number" && !isNaN(r.elapsedMs) ? formatElapsed(r.elapsedMs) : "N/A";
 
-    msg += `--- RUTA ${idx + 1}: ${label} ---\n`;
-    msg += `Vehiculo: ${r.mode.toUpperCase()} | Distancia: ${distStr} | Duracion: ${durStr}\n`;
-    msg += `Cobro: ${formatCurrency(rCollect)} | Viaticos: ${formatCurrency(rAllowance)} | Balance Neto: ${formatCurrency(rBalance)}\n`;
-    msg += `Paradas (${r.stopsDelivered}/${r.stopsTotal}):\n`;
+    msg += `🔹 *RUTA ${idx + 1}: ${label}*\n`;
+    msg += `   • 🚘 *Vehículo:* ${r.mode.toUpperCase()} | 📏 *Distancia:* ${distStr} | ⏱️ *Duración:* ${durStr}\n`;
+    msg += `   • 💵 *Cobro:* ${formatCurrency(rCollect)} | ⛽ *Viáticos:* ${formatCurrency(rAllowance)} | 💰 *Balance:* *${formatCurrency(rBalance)}*\n`;
+    msg += `   • *Paradas (${r.stopsDelivered}/${r.stopsTotal}):*\n`;
 
     if (stops.length === 0) {
-      msg += `  (Sin desglose de paradas)\n`;
+      msg += `     (Sin desglose de paradas)\n`;
     } else {
       stops.forEach((s, sIdx) => {
-        const statusTag = s.delivered ? "[OK]" : "[PENDIENTE]";
+        const statusIcon = s.delivered ? "✅" : "⏳";
         const timeStr = s.deliveredAt ? `[${formatDateShort(s.deliveredAt)}] ` : "";
-        msg += `  ${statusTag} ${sIdx + 1}. ${timeStr}${s.label}`;
+        msg += `     ${statusIcon} ${sIdx + 1}. ${timeStr}${s.label}`;
         
         const extras: string[] = [];
-        if (typeof s.collectAmount === "number" && s.collectAmount > 0) extras.push(`Cobro: ${formatCurrency(s.collectAmount)}`);
-        if (typeof s.travelAllowance === "number" && s.travelAllowance > 0) extras.push(`Viaticos: ${formatCurrency(s.travelAllowance)}`);
-        if (s.notes) extras.push(`Nota: ${s.notes}`);
+        if (typeof s.collectAmount === "number" && s.collectAmount > 0) extras.push(`💵 ${formatCurrency(s.collectAmount)}`);
+        if (typeof s.travelAllowance === "number" && s.travelAllowance > 0) extras.push(`⛽ ${formatCurrency(s.travelAllowance)}`);
+        if (s.notes) extras.push(`📝 ${s.notes}`);
 
         if (extras.length > 0) {
           msg += ` (${extras.join(" | ")})`;
@@ -151,37 +151,40 @@ export function generateBatchRouteReport(records: RouteHistoryRecord[]): string 
     msg += `\n`;
   });
 
-  msg += `RutaFacil App`;
+  msg += `🚀 *Generado desde RutaFácil*`;
   return msg;
 }
 
 /**
- * Genera el mensaje de WhatsApp que envía el despachador al grupo con el Smart Link (sin emojis).
+ * Genera el mensaje de WhatsApp para despachar un pedido con Smart Link y emojis en el chat.
  */
 export function generateWhatsAppDispatchText(data: {
   geoUrl: string;
   label: string;
+  kind?: "delivery" | "pickup";
   collectAmount?: number;
   travelAllowance?: number;
   notes?: string;
   assignee?: string;
 }): string {
-  const { geoUrl, label, collectAmount, travelAllowance, notes, assignee } = data;
+  const { geoUrl, label, kind = "delivery", collectAmount, travelAllowance, notes, assignee } = data;
 
-  let msg = `[NUEVO PEDIDO ASIGNADO]\n`;
-  if (assignee) msg += `Repartidor: @${assignee}\n`;
-  msg += `Direccion: ${label}\n`;
+  const header = kind === "pickup" ? "🏬 *NUEVA RECOGIDA ASIGNADA*" : "📦 *NUEVA ENTREGA ASIGNADA*";
+  let msg = `${header}\n`;
+  if (assignee) msg += `👤 *Repartidor:* @${assignee}\n`;
+  msg += `📍 *Dirección:* ${label}\n`;
   if (typeof collectAmount === "number" && collectAmount > 0) {
-    msg += `Cobrar al cliente: ${formatCurrency(collectAmount)}\n`;
+    const amountLabel = kind === "pickup" ? "💵 *Recoger del cliente:*" : "💵 *Entregar al cliente:*";
+    msg += `${amountLabel} ${formatCurrency(collectAmount)}\n`;
   }
   if (typeof travelAllowance === "number" && travelAllowance > 0) {
-    msg += `Viaticos asignados: ${formatCurrency(travelAllowance)}\n`;
+    msg += `⛽ *Viáticos asignados:* ${formatCurrency(travelAllowance)}\n`;
   }
   if (notes) {
-    msg += `Notas: ${notes}\n`;
+    msg += `📝 *Notas:* ${notes}\n`;
   }
 
-  msg += `\nToca para cargar en RutaFacil:\n${geoUrl}`;
+  msg += `\n👉 *Toca para cargar en RutaFácil:*\n${geoUrl}`;
   return msg;
 }
 

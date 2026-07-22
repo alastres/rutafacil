@@ -2381,6 +2381,81 @@ input {
   font-size: 1.1rem;
 }
 
+/* Selector de Tipo de Pedido (Entrega / Recogida) */
+.dispatch-kind-selector {
+  display: flex;
+  background: var(--asfalto);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.dispatch-kind-btn {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 7px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--pintura-blanca);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: color 0.18s ease;
+}
+
+.dispatch-kind-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pintura-blanca);
+  transition: color 0.18s ease;
+}
+
+.dispatch-kind-pill {
+  position: absolute;
+  inset: 0;
+  background: var(--pintura);
+  border-radius: 7px;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dispatch-kind-btn.is-active .dispatch-kind-content {
+  color: var(--asfalto);
+}
+
+/* Validación y feedback de errores */
+.dispatch-input--error {
+  border-color: var(--cono) !important;
+  box-shadow: 0 0 0 2px rgba(217, 72, 28, 0.3) !important;
+}
+
+.dispatch-field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ff6b6b;
+  font-size: 0.76rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(217, 72, 28, 0.12);
+  border: 1px solid rgba(217, 72, 28, 0.3);
+  border-radius: 5px;
+}
+
 .dispatch-modal__form {
   display: flex;
   flex-direction: column;

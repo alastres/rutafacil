@@ -78,21 +78,34 @@ describe("share.ts", () => {
     expect(batchReport).toContain("$85.000");  // Balance neto acumulado
   });
 
-  it("generates WhatsApp dispatch text with Smart Link", () => {
-    const dispatchText = generateWhatsAppDispatchText({
+  it("generates WhatsApp dispatch text for delivery and pickup", () => {
+    const deliveryText = generateWhatsAppDispatchText({
       geoUrl: "https://rutafacil.app/?geo=4.6,-74.0&cobro=50000",
       label: "Calle 10 #5-20",
+      kind: "delivery",
       collectAmount: 50000,
       travelAllowance: 5000,
       notes: "Llevar sencillo",
       assignee: "Carlos",
     });
 
-    expect(dispatchText).toContain("NUEVO PEDIDO ASIGNADO");
-    expect(dispatchText).toContain("@Carlos");
-    expect(dispatchText).toContain("Calle 10 #5-20");
-    expect(dispatchText).toContain("$50.000");
-    expect(dispatchText).toContain("Llevar sencillo");
-    expect(dispatchText).toContain("https://rutafacil.app/?geo=4.6,-74.0&cobro=50000");
+    expect(deliveryText).toContain("NUEVA ENTREGA ASIGNADA");
+    expect(deliveryText).toContain("@Carlos");
+    expect(deliveryText).toContain("Calle 10 #5-20");
+    expect(deliveryText).toContain("$50.000");
+
+    const pickupText = generateWhatsAppDispatchText({
+      geoUrl: "https://rutafacil.app/?geo=4.6,-74.0&kind=pickup&cobro=35000",
+      label: "[Recogida] Bodega Central",
+      kind: "pickup",
+      collectAmount: 35000,
+      travelAllowance: 5000,
+      notes: "Reclamar orden #4092",
+      assignee: "Juan",
+    });
+
+    expect(pickupText).toContain("NUEVA RECOGIDA ASIGNADA");
+    expect(pickupText).toContain("Recoger del cliente");
+    expect(pickupText).toContain("Reclamar orden #4092");
   });
 });
