@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAllLocations, parseSharedText } from "./parse";
+import { parseAllLocations, parseSharedText, parseSmartLinkParams } from "./parse";
 
 describe("parseSharedText", () => {
   it("entiende la ubicación de WhatsApp (geo:)", () => {
@@ -92,5 +92,42 @@ describe("parseAllLocations", () => {
       "https://www.google.com/maps/place/Panader%C3%ADa+La+Espiga/@4.6,-74.08,17z",
     );
     expect(r.locations[0].label).toBe("Panadería La Espiga");
+  });
+});
+
+describe("parseSmartLinkParams", () => {
+  it("decodifica parámetros URL de Smart Link", () => {
+    const params = new URLSearchParams("geo=4.6097,-74.0817&label=Calle+10&cobro=50000&viaticos=5000&notes=Cambio+50k&repartidor=Carlos");
+    const r = parseSmartLinkParams(params);
+    expect(r).toEqual({
+      lat: 4.6097,
+      lng: -74.0817,
+      label: "Calle 10",
+      collectAmount: 50000,
+      travelAllowance: 5000,
+      notes: "Cambio 50k",
+      assignee: "Carlos",
+    });
+  });
+
+  it("decodifica payload Base64 ?order=...", () => {
+    const payload = JSON.stringify({
+      lat: 4.6123,
+      lng: -74.0711,
+      label: "Panadería",
+      collectAmount: 25000,
+      travelAllowance: 3000,
+    });
+    const b64 = btoa(payload);
+    const r = parseSmartLinkParams(`order=${b64}`);
+    expect(r).toEqual({
+      lat: 4.6123,
+      lng: -74.0711,
+      label: "Panadería",
+      collectAmount: 25000,
+      travelAllowance: 3000,
+      notes: undefined,
+      assignee: undefined,
+    });
   });
 });

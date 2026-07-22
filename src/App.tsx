@@ -2,13 +2,14 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import PushPermissionRequester from "./components/PushPermissionRequester";
 import BackSwipeHandler from "./components/BackSwipeHandler";
-import { parseAllLocations, parseSharedText } from "./lib/parse";
+import { parseAllLocations, parseSharedText, parseSmartLinkParams } from "./lib/parse";
 import { resolveShortLink } from "./lib/resolve";
 import { ensurePersistentStorage } from "./lib/historyDb";
 import { showToast } from "./lib/toast";
 import { useRouteStore } from "./state/routeStore";
 import { withLoader } from "./state/loadingStore";
 import { Header } from "./components/Header";
+import { DispatchModal } from "./components/DispatchModal";
 import { AddStop } from "./components/AddStop";
 import { ReturnPointTrigger } from "./components/ReturnPointSheet";
 import { EmptyState } from "./components/EmptyState";
@@ -27,8 +28,10 @@ const MapView = lazy(() => import("./components/MapView"));
 export default function App() {
   const stops = useRouteStore((s) => s.stops);
   const addStop = useRouteStore((s) => s.addStop);
+  const addEnrichedStop = useRouteStore((s) => s.addEnrichedStop);
   const [showList, setShowList] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
 
   const notify = useCallback((text: string, error = false) => {
     showToast(text, {
@@ -88,15 +91,32 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const smartLink = parseSmartLinkParams(params);
+    if (smartLink) {
+      addEnrichedStop({
+        lat: smartLink.lat,
+        lng: smartLink.lng,
+        label: smartLink.label || "Parada cargada",
+        collectAmount: smartLink.collectAmount,
+        travelAllowance: smartLink.travelAllowance,
+        notes: smartLink.notes,
+        assignee: smartLink.assignee,
+      });
+      const extraMsg = smartLink.collectAmount ? ` (Cobro: $${smartLink.collectAmount.toLocaleString("es-CO")})` : "";
+      notify(`Pedido de WhatsApp cargado: ${smartLink.label || "Parada"}${extraMsg}`);
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
+
     const shared = [params.get("title"), params.get("text"), params.get("url")]
       .filter(Boolean)
       .join(" ")
       .trim();
     if (shared) {
       void ingest(shared);
-      window.history.replaceState(null, "", "/");
+      window.history.replaceState(null, "", window.location.pathname);
     }
-  }, []);
+  }, [addEnrichedStop, ingest, notify]);
 
   useEffect(() => {
     void ensurePersistentStorage();
@@ -109,8 +129,9 @@ export default function App() {
       <ErrorBoundary>
         <div className={`app-container${hasStops ? " has-stops" : " is-empty"}`}>
           <GlobalLoader />
-          <Header />
+          <Header onOpenDispatch={() => setShowDispatchModal(true)} />
           <NavigationBanner />
+          {showDispatchModal && <DispatchModal onClose={() => setShowDispatchModal(false)} />}
 
           {!hasStops && (
             <>

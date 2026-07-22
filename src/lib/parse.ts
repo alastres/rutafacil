@@ -129,3 +129,94 @@ export function parseAllLocations(raw: string): BulkParseResult {
 
   return { locations, shortLinks };
 }
+
+export interface EnrichedSmartLink {
+  lat: number;
+  lng: number;
+  label?: string;
+  collectAmount?: number;
+  travelAllowance?: number;
+  notes?: string;
+  assignee?: string;
+}
+
+/**
+ * Interpreta parámetros URL de un Enlace Inteligente (Smart Link) generado
+ * desde WhatsApp o por el módulo de despacho.
+ */
+export function parseSmartLinkParams(params: URLSearchParams | string): EnrichedSmartLink | null {
+  const searchParams = typeof params === "string" ? new URLSearchParams(params) : params;
+
+  // 1. Si viene en formato comprimido Base64: ?order=...
+  const orderBase64 = searchParams.get("order");
+  if (orderBase64) {
+    try {
+      const decoded = atob(orderBase64);
+      const data = JSON.parse(decoded);
+      if (typeof data.lat === "number" && typeof data.lng === "number" && isValidLatLng(data.lat, data.lng)) {
+        return {
+          lat: data.lat,
+          lng: data.lng,
+          label: data.label || undefined,
+          collectAmount: typeof data.collectAmount === "number" ? data.collectAmount : undefined,
+          travelAllowance: typeof data.travelAllowance === "number" ? data.travelAllowance : undefined,
+          notes: data.notes || undefined,
+          assignee: data.assignee || undefined,
+        };
+      }
+    } catch {
+      // Fallback si falla Base64
+    }
+  }
+
+  // 2. Parámetros URL individuales: ?geo=4.6097,-74.0817&label=...&cobro=50000
+  const geo = searchParams.get("geo");
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  if (geo) {
+    const parts = geo.split(",");
+    if (parts.length === 2) {
+      const parsedLat = parseFloat(parts[0]);
+      const parsedLng = parseFloat(parts[1]);
+      if (isValidLatLng(parsedLat, parsedLng)) {
+        lat = parsedLat;
+        lng = parsedLng;
+      }
+    }
+  }
+
+  if (lat === null || lng === null) {
+    const latParam = searchParams.get("lat");
+    const lngParam = searchParams.get("lng");
+    if (latParam && lngParam) {
+      const parsedLat = parseFloat(latParam);
+      const parsedLng = parseFloat(lngParam);
+      if (isValidLatLng(parsedLat, parsedLng)) {
+        lat = parsedLat;
+        lng = parsedLng;
+      }
+    }
+  }
+
+  if (lat === null || lng === null) return null;
+
+  const label = searchParams.get("label") || undefined;
+  const cobroRaw = searchParams.get("cobro") || searchParams.get("collect");
+  const viaticosRaw = searchParams.get("viaticos") || searchParams.get("allowance");
+  const notes = searchParams.get("notes") || searchParams.get("notas") || undefined;
+  const assignee = searchParams.get("repartidor") || searchParams.get("assignee") || undefined;
+
+  const collectAmount = cobroRaw ? parseFloat(cobroRaw) : undefined;
+  const travelAllowance = viaticosRaw ? parseFloat(viaticosRaw) : undefined;
+
+  return {
+    lat,
+    lng,
+    label,
+    collectAmount: typeof collectAmount === "number" && !isNaN(collectAmount) ? collectAmount : undefined,
+    travelAllowance: typeof travelAllowance === "number" && !isNaN(travelAllowance) ? travelAllowance : undefined,
+    notes,
+    assignee,
+  };
+}

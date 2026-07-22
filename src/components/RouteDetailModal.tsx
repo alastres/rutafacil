@@ -4,6 +4,8 @@ import { activeOverlays } from "../lib/overlays";
 import { CloseIcon, CheckIcon } from "./icons";
 import { MODES } from "./ModeSelector";
 import { formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
+import { generateSingleRouteReport, shareText } from "../lib/share";
+import { FaShareNodes } from "react-icons/fa6";
 import RouteDetailMap from "./RouteDetailMap";
 
 function formatDateFull(ts?: number | null): string {
@@ -64,9 +66,23 @@ export function RouteDetailModal({
       <div className="history-panel history-detail">
         <div className="history-panel__header">
           <h2>{record.label || "Detalle de Ruta"}</h2>
-          <button className="history-close" onClick={onClose} aria-label="Cerrar detalle">
-            <CloseIcon width={16} height={16} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              type="button"
+              className="history-close"
+              onClick={async () => {
+                const report = generateSingleRouteReport(record);
+                await shareText(record.label || "Rendición de Ruta", report);
+              }}
+              aria-label="Compartir Rendición por WhatsApp"
+              title="Compartir Rendición por WhatsApp"
+            >
+              <FaShareNodes size={15} />
+            </button>
+            <button className="history-close" onClick={onClose} aria-label="Cerrar detalle">
+              <CloseIcon width={16} height={16} />
+            </button>
+          </div>
         </div>
 
         <div className="history-detail__body">

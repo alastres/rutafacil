@@ -1,7 +1,8 @@
 import { useRouteStore } from "../state/routeStore";
 import { HistoryPanel } from "./HistoryPanel";
+import { FaTruckFast } from "react-icons/fa6";
 
-export function Header() {
+export function Header({ onOpenDispatch }: { onOpenDispatch?: () => void }) {
   const stops = useRouteStore((s) => s.stops);
   const optimizedKm = useRouteStore((s) => s.optimizedKm);
   const durationMin = useRouteStore((s) => s.durationMin);
@@ -15,7 +16,19 @@ export function Header() {
           <span className="wordmark-ruta">Ruta</span>
           <span className="wordmark-facil">Fácil</span>
         </span>
-        <HistoryPanel />
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {onOpenDispatch && (
+            <button
+              type="button"
+              className="header-dispatch-btn"
+              onClick={onOpenDispatch}
+              title="Despachar pedido por WhatsApp"
+            >
+              <FaTruckFast size={14} /> Despachar
+            </button>
+          )}
+          <HistoryPanel />
+        </div>
       </div>
       <div className="header-ticker" aria-live="polite">
         <span>

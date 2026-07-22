@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState, useRef } from "react";
 import { activeOverlays } from "../lib/overlays";
-import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
+import { FaTrash, FaPen, FaClockRotateLeft, FaEye, FaShareNodes, FaListCheck } from "react-icons/fa6";
 import { useHistoryStore } from "../state/historyStore";
 import { useRouteStore } from "../state/routeStore";
 import {
@@ -10,6 +10,7 @@ import {
   isStoragePersisted,
   type RouteHistoryRecord,
 } from "../lib/historyDb";
+import { generateSingleRouteReport, generateBatchRouteReport, shareText } from "../lib/share";
 import { CloseIcon } from "./icons";
 import { RouteDetailModal } from "./RouteDetailModal";
 import { showConfirm } from "./ConfirmToast";
@@ -92,6 +93,13 @@ export function HistoryPanel() {
     });
   };
 
+  const handleShareSelected = async () => {
+    const selectedRecords = records.filter((r) => selected.has(r.id));
+    if (selectedRecords.length === 0) return;
+    const report = generateBatchRouteReport(selectedRecords);
+    await shareText(`Consolidado ${selectedRecords.length} Rutas`, report);
+  };
+
   return (
     <>
       <button
@@ -141,7 +149,7 @@ export function HistoryPanel() {
                   </>
                 ) : (
                   <button className="history-link-btn" onClick={() => setSelectMode(true)}>
-                    Eliminar por lotes
+                    <FaListCheck size={13} /> Selección por lotes
                   </button>
                 )}
               </div>
@@ -169,6 +177,9 @@ export function HistoryPanel() {
 
             {selectMode && selected.size > 0 && (
               <div className="history-panel__footer">
+                <button className="btn btn--primary" onClick={handleShareSelected} style={{ flex: 1 }}>
+                  <FaShareNodes size={13} /> Compartir ({selected.size})
+                </button>
                 <button className="btn btn--danger" onClick={handleDeleteSelected}>
                   <FaTrash size={13} /> Eliminar ({selected.size})
                 </button>
@@ -306,6 +317,18 @@ function HistoryItem({
             aria-label={`Ver detalle de ${record.label}`}
           >
             <FaEye size={13} />
+          </button>
+          <button
+            className="history-icon-btn"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const report = generateSingleRouteReport(record);
+              await shareText(record.label || "Rendición de Ruta", report);
+            }}
+            aria-label={`Compartir ${record.label}`}
+            title="Compartir por WhatsApp"
+          >
+            <FaShareNodes size={13} />
           </button>
           <button
             className="history-icon-btn"

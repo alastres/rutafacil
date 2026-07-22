@@ -3,6 +3,7 @@ import { AnimatePresence, motion, Reorder, useDragControls } from "motion/react"
 import { getPreferredNavApp, setPreferredNavApp, getNavUrl, NAV_APP_OPTIONS, type NavApp } from "../lib/nav";
 import { downloadGpx } from "../lib/gpx";
 import { haversineKm } from "../lib/geo";
+import { formatCurrency } from "../lib/share";
 import { useRouteStore, type Stop } from "../state/routeStore";
 import {
   CheckIcon,
@@ -13,6 +14,7 @@ import {
   DownloadIcon,
   CompassIcon,
 } from "./icons";
+import { FaDollarSign, FaGasPump, FaClipboardList } from "react-icons/fa6";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
@@ -179,6 +181,25 @@ function StopItem({ stop, position }: { stop: Stop; position: number }) {
       <article className="sl-card sl-card--done">
         <div className="sl-card-meta">Parada {position}</div>
         <div className="sl-card-label">{stop.label}</div>
+        {(typeof stop.collectAmount === "number" || typeof stop.travelAllowance === "number" || stop.notes) && (
+          <div className="sl-enriched-badges">
+            {typeof stop.collectAmount === "number" && stop.collectAmount > 0 && (
+              <span className="sl-badge-extra sl-badge-extra--collect">
+                <FaDollarSign size={11} /> Cobrar: {formatCurrency(stop.collectAmount)}
+              </span>
+            )}
+            {typeof stop.travelAllowance === "number" && stop.travelAllowance > 0 && (
+              <span className="sl-badge-extra sl-badge-extra--allowance">
+                <FaGasPump size={11} /> Viáticos: {formatCurrency(stop.travelAllowance)}
+              </span>
+            )}
+            {stop.notes && (
+              <span className="sl-badge-extra sl-badge-extra--notes" title={stop.notes}>
+                <FaClipboardList size={11} /> {stop.notes}
+              </span>
+            )}
+          </div>
+        )}
         <button
           className="sl-stamp"
           onClick={() => toggleDelivered(stop.id)}
@@ -269,6 +290,26 @@ function StopItemDraggable({
             <CloseIcon size={13} />
           </button>
         </div>
+
+        {(typeof stop.collectAmount === "number" || typeof stop.travelAllowance === "number" || stop.notes) && (
+          <div className="sl-enriched-badges">
+            {typeof stop.collectAmount === "number" && stop.collectAmount > 0 && (
+              <span className="sl-badge-extra sl-badge-extra--collect">
+                <FaDollarSign size={11} /> Cobrar: {formatCurrency(stop.collectAmount)}
+              </span>
+            )}
+            {typeof stop.travelAllowance === "number" && stop.travelAllowance > 0 && (
+              <span className="sl-badge-extra sl-badge-extra--allowance">
+                <FaGasPump size={11} /> Viáticos: {formatCurrency(stop.travelAllowance)}
+              </span>
+            )}
+            {stop.notes && (
+              <span className="sl-badge-extra sl-badge-extra--notes" title={stop.notes}>
+                <FaClipboardList size={11} /> {stop.notes}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="sl-card-actions">
           <a

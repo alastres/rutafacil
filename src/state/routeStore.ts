@@ -20,6 +20,11 @@ export interface Stop {
   createdAt: number;
   /** Km del tramo que llega a esta parada (por calles si byStreets) */
   legKm?: number;
+  collectAmount?: number;
+  travelAllowance?: number;
+  notes?: string;
+  assignee?: string;
+  deliveredAt?: number;
 }
 
 export interface OptimizationResult {
@@ -48,21 +53,12 @@ interface RouteState {
   /** Km del tramo final hasta el punto de retorno, una vez optimizada la
    * ruta; null si no hay punto de retorno o aún no se ha optimizado. */
   returnLegKm: number | null;
+  /** Geometría de la ruta optimizada vigente; null si fue línea recta */
   geometry: [number, number][] | null;
-  /** Modo de transporte usado para calcular la ruta */
   mode: TransportMode;
-  /** Posición GPS en vivo del usuario mientras se sigue la ruta */
+  /** null si no hay GPS o seguimiento desactivado */
   live: LatLng | null;
-  /** true = geolocalización observando en vivo */
   tracking: boolean;
-  /**
-   * Contador de la última solicitud de cálculo de ruta iniciada (Armar ruta,
-   * cambio de vehículo, recálculo automático en vivo). Sirve para descartar
-   * respuestas obsoletas cuando dos cálculos se solapan: la petición A puede
-   * resolver DESPUÉS que la B aunque A se haya iniciado antes, y sin esta
-   * guarda su resultado atrasado pisaba el de B (p. ej. cambiar de "auto" a
-   * "bici" rápido podía dejar en pantalla la ruta de "auto").
-   */
   routeVersion: number;
   /**
    * Identidad de la ruta activa en el historial (IndexedDB). Se crea sola
@@ -77,6 +73,15 @@ interface RouteState {
   /** Cuándo se marcó la última entrega pendiente como completada. */
   completedAt: number | null;
   addStop: (lat: number, lng: number, label?: string) => void;
+  addEnrichedStop: (data: {
+    lat: number;
+    lng: number;
+    label: string;
+    collectAmount?: number;
+    travelAllowance?: number;
+    notes?: string;
+    assignee?: string;
+  }) => void;
   removeStop: (id: string) => void;
   renameStop: (id: string, label: string) => void;
   reorderStops: (newPendingStops: Stop[]) => void;
@@ -155,6 +160,11 @@ function syncHistory(s: RouteState): Promise<void> {
       label: st.label,
       delivered: st.delivered,
       legKm: st.legKm,
+      collectAmount: st.collectAmount,
+      travelAllowance: st.travelAllowance,
+      notes: st.notes,
+      assignee: st.assignee,
+      deliveredAt: st.deliveredAt,
     })),
     geometry: s.geometry,
     origin: s.origin,
@@ -215,10 +225,43 @@ export const useRouteStore = create<RouteState>()(
         syncHistory(get());
       },
 
+      addEnrichedStop: (data) => {
+        const now = Date.now();
+        const isFresh = get().historyId === null;
+        set((s) => ({
+          stops: [
+            ...s.stops,
+            {
+              id: newId(),
+              lat: data.lat,
+              lng: data.lng,
+              label: data.label ?? `Parada ${s.stops.length + 1}`,
+              delivered: false,
+              createdAt: now,
+              collectAmount: data.collectAmount,
+              travelAllowance: data.travelAllowance,
+              notes: data.notes,
+              assignee: data.assignee,
+            },
+          ],
+          ...invalidated,
+          ...(isFresh
+            ? {
+                historyId: newHistoryId(),
+                historyLabel: null,
+                historyCreatedAt: now,
+                trackingStartedAt: null,
+                completedAt: null,
+              }
+            : {}),
+        }));
+        syncHistory(get());
+      },
+
       markStopDelivered: (id) => {
         set((s) => {
           const stops = s.stops.map((st) =>
-            st.id === id ? { ...st, delivered: true } : st,
+            st.id === id ? { ...st, delivered: true, deliveredAt: st.deliveredAt ?? Date.now() } : st,
           );
           const allDelivered = stops.length > 0 && stops.every((st) => st.delivered);
           return {
@@ -329,9 +372,17 @@ export const useRouteStore = create<RouteState>()(
 
       toggleDelivered: (id) => {
         set((s) => {
-          const stops = s.stops.map((st) =>
-            st.id === id ? { ...st, delivered: !st.delivered } : st,
-          );
+          const stops = s.stops.map((st) => {
+            if (st.id === id) {
+              const nextDelivered = !st.delivered;
+              return {
+                ...st,
+                delivered: nextDelivered,
+                deliveredAt: nextDelivered ? (st.deliveredAt ?? Date.now()) : undefined,
+              };
+            }
+            return st;
+          });
           const allDelivered = stops.length > 0 && stops.every((st) => st.delivered);
           return {
             stops,

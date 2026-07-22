@@ -2291,6 +2291,246 @@ input {
   color: var(--pintura-blanca);
 }
 
+/* ============ Botón Despachar en Header ============ */
+.header-dispatch-btn {
+  background: rgba(247, 198, 0, 0.15);
+  color: var(--pintura);
+  border: 1px solid var(--pintura);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.header-dispatch-btn:hover {
+  background: var(--pintura);
+  color: var(--asfalto);
+}
+
+/* ============ Modal de Despacho ============ */
+.dispatch-modal {
+  max-width: 460px;
+  padding-bottom: 8px;
+}
+
+.dispatch-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pintura-blanca);
+  font-size: 1.1rem;
+}
+
+.dispatch-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  margin: 0;
+}
+
+.dispatch-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.dispatch-label {
+  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--tinta-clara);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.location-input-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.location-input-group .dispatch-input {
+  flex: 1;
+}
+
+.btn-map-location {
+  background: var(--asfalto);
+  color: var(--pintura);
+  border: 1px solid var(--pintura);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-map-location:hover {
+  background: var(--pintura);
+  color: var(--asfalto);
+}
+
+.location-success-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(29, 122, 70, 0.15);
+  color: var(--pintura-blanca);
+  border: 1px solid var(--senal-verde);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+.location-success-badge__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-family: var(--font-display);
+}
+
+.location-success-badge__title {
+  font-weight: 800;
+  color: #2ed573;
+}
+
+.location-success-badge__coords {
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pintura-blanca);
+}
+
+.location-success-badge__clear {
+  background: transparent;
+  border: none;
+  color: var(--pintura-blanca);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.dispatch-input {
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  font-family: var(--font-body);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dispatch-input:focus {
+  border-color: var(--pintura);
+}
+
+.dispatch-field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.dispatch-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dispatch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: none;
+}
+
+.dispatch-btn--wa {
+  background: #25d366;
+  color: #ffffff;
+}
+
+.dispatch-btn--wa:hover {
+  background: #1eb956;
+}
+
+.dispatch-btn--secondary {
+  background: var(--asfalto);
+  color: var(--pintura);
+  border: 1.5px solid var(--pintura);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.15s ease;
+}
+
+.dispatch-btn--secondary:hover {
+  background: var(--pintura);
+  color: var(--asfalto);
+}
+
+/* ============ Badges Enriquecidos en Tarjetas de Paradas ============ */
+.sl-enriched-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.sl-badge-extra {
+  font-size: 0.72rem;
+  font-family: var(--font-data);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.sl-badge-extra--collect {
+  background: rgba(29, 122, 70, 0.2);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.sl-badge-extra--allowance {
+  background: rgba(247, 198, 0, 0.2);
+  color: var(--pintura);
+  border: 1px solid rgba(247, 198, 0, 0.3);
+}
+
+.sl-badge-extra--notes {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--pintura-blanca);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sl-gpx-btn {
   background: var(--pintura);
   color: var(--asfalto);

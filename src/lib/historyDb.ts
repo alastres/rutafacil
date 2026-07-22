@@ -1,7 +1,7 @@
 import type { TransportMode } from "./routing";
 
 const DB_NAME = "rutafacil-history";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE = "routes";
 const RETURN_POINTS_STORE = "returnPoints";
 
@@ -15,6 +15,11 @@ export interface HistoryStop {
   label: string;
   delivered: boolean;
   legKm?: number;
+  collectAmount?: number;
+  travelAllowance?: number;
+  notes?: string;
+  assignee?: string;
+  deliveredAt?: number;
 }
 
 export interface RouteHistoryRecord {
