@@ -338,11 +338,65 @@ input {
 }
 
 .sl-card--done {
-  opacity: 0.62;
-  background: var(--pavimento);
-  box-shadow: none;
+  opacity: 0.88;
+  background: linear-gradient(135deg, rgba(46, 213, 115, 0.06) 0%, var(--pintura-blanca) 100%);
+  border-left: 4px solid var(--senal-verde);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.sl-card--done:hover {
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(46, 213, 115, 0.12);
+}
+
+.sl-done-pill {
+  background: rgba(46, 213, 115, 0.15);
+  color: #1e7e45;
+  border: 1px solid rgba(46, 213, 115, 0.35);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sl-card-label--done {
+  text-decoration: line-through;
+  color: var(--tinta-suave);
+  font-weight: 600;
+}
+
+.sl-done-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.sl-btn-undo {
+  background: transparent;
+  color: var(--tinta-clara);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sl-btn-undo:hover {
+  background: rgba(217, 72, 28, 0.08);
+  color: var(--cono);
+  border-color: var(--cono);
 }
 
 .sl-card-top {

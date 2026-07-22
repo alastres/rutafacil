@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AnimatePresence, motion, Reorder, useDragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { getPreferredNavApp, setPreferredNavApp, getNavUrl, NAV_APP_OPTIONS, type NavApp } from "../lib/nav";
 import { downloadGpx } from "../lib/gpx";
 import { haversineKm } from "../lib/geo";
@@ -102,17 +102,17 @@ export function RoadList({ moving }: { moving: boolean }) {
       )}
 
       {/* Paradas completadas */}
-      <AnimatePresence initial={false}>
-        {doneStops.length > 0 && (
+      {doneStops.length > 0 && (
+        <div className="sl-done-group">
           <div className="sl-section-label">
             <CheckIcon size={11} />
             Completadas ({doneStops.length})
           </div>
-        )}
-        {doneStops.map((stop, i) => (
-          <StopItem key={stop.id} stop={stop} position={i + 1} />
-        ))}
-      </AnimatePresence>
+          {doneStops.map((stop, i) => (
+            <StopItem key={stop.id} stop={stop} position={i + 1} />
+          ))}
+        </div>
+      )}
 
       {/* Paradas pendientes */}
       {pendingStops.length > 0 && (
@@ -168,24 +168,28 @@ function StopItem({ stop, position }: { stop: Stop; position: number }) {
 
   return (
     <motion.div
-      layout
+      layout="position"
       className="sl-item sl-item--done"
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 60, transition: { duration: 0.18 } }}
-      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 350, damping: 30 }}
     >
       <span className="sl-badge sl-badge--done">
         <CheckIcon size={13} />
       </span>
       <article className="sl-card sl-card--done">
-        <div className="sl-card-meta">Parada {position}</div>
-        <div className="sl-card-label">{stop.label}</div>
+        <div className="sl-card-top">
+          <div className="sl-card-meta">Parada {position}</div>
+          <span className="sl-done-pill">
+            <CheckIcon size={11} /> Entregada
+          </span>
+        </div>
+        <div className="sl-card-label sl-card-label--done">{stop.label}</div>
         {(typeof stop.collectAmount === "number" || typeof stop.travelAllowance === "number" || stop.notes) && (
           <div className="sl-enriched-badges">
             {typeof stop.collectAmount === "number" && stop.collectAmount > 0 && (
               <span className="sl-badge-extra sl-badge-extra--collect">
-                <FaDollarSign size={11} /> Cobrar: {formatCurrency(stop.collectAmount)}
+                <FaDollarSign size={11} /> Cobrado: {formatCurrency(stop.collectAmount)}
               </span>
             )}
             {typeof stop.travelAllowance === "number" && stop.travelAllowance > 0 && (
@@ -200,13 +204,16 @@ function StopItem({ stop, position }: { stop: Stop; position: number }) {
             )}
           </div>
         )}
-        <button
-          className="sl-stamp"
-          onClick={() => toggleDelivered(stop.id)}
-          title="Tocar para deshacer"
-        >
-          <CheckIcon size={11} /> Entregada
-        </button>
+        <div className="sl-done-actions">
+          <button
+            type="button"
+            className="sl-btn-undo"
+            onClick={() => toggleDelivered(stop.id)}
+            title="Deshacer entrega"
+          >
+            Deshacer entrega
+          </button>
+        </div>
       </article>
     </motion.div>
   );
@@ -251,10 +258,9 @@ function StopItemDraggable({
       dragListener={false}
       dragControls={dragControls}
       className={`sl-item${isNext ? " sl-item--next" : ""}`}
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 60, transition: { duration: 0.18 } }}
-      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 350, damping: 30 }}
     >
       <span className="sl-badge sl-badge--num">{position}</span>
 
