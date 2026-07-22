@@ -1651,7 +1651,7 @@ input {
 .point-picker {
   position: fixed;
   inset: 0;
-  z-index: 5000;
+  z-index: 3000;
   display: flex;
   flex-direction: column;
   background: var(--pavimento);
@@ -2039,7 +2039,7 @@ input {
 .stops-offcanvas {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 1000;
   pointer-events: none;
 }
 
@@ -2680,14 +2680,5 @@ input {
   gap: 5px;
   cursor: pointer;
   flex-shrink: 0;
-}
-
-/* ============ Capas de elevación Z-Index superiores para iOS ============ */
-[data-rht-toaster],
-.rht,
-.react-hot-toast,
-#toaster-container,
-div:has(> [data-rht-toaster]) {
-  z-index: 20000 !important;
 }
 

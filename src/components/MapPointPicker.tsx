@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getPosition, type LatLng } from "../lib/geo";
@@ -38,8 +39,6 @@ export function MapPointPicker({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const centerRef = useRef<LatLng>(initial ?? FALLBACK_CENTER);
   const [, forceRender] = useState(0);
-  // Sin ubicación ya elegida, arranca buscando el GPS del usuario en vez de
-  // dejarlo parado en un punto fijo del mundo.
   const [locating, setLocating] = useState(!initial);
 
   useEffect(() => {
@@ -66,8 +65,6 @@ export function MapPointPicker({
       userMoved = true;
     };
     map.on("move", onMove);
-    // Marca el gesto ANTES de que se dispare "move", para que el jumpTo del
-    // GPS (si llega justo después) sepa que ya no debe pisarlo.
     map.on("dragstart", markUserMoved);
     map.on("wheel", markUserMoved);
     map.on("touchstart", markUserMoved);
@@ -75,8 +72,6 @@ export function MapPointPicker({
     if (!initial) {
       getPosition()
         .then((pos) => {
-          // Si el mapa ya se desmontó o el usuario ya empezó a moverlo
-          // mientras se resolvía el GPS, no le pisamos el gesto.
           if (mapRef.current !== map || userMoved) return;
           centerRef.current = pos;
           map.jumpTo({ center: [pos.lng, pos.lat] });
@@ -97,7 +92,7 @@ export function MapPointPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
+  return createPortal(
     <div
       className="point-picker"
       onTouchStart={(e) => {
@@ -129,6 +124,7 @@ export function MapPointPicker({
           Usar este punto
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
