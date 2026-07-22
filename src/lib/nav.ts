@@ -9,10 +9,10 @@ export interface NavAppOption {
 }
 
 export const NAV_APP_OPTIONS: NavAppOption[] = [
-  { id: "google", name: "Google Maps", description: "Navegación estándar" },
-  { id: "waze", name: "Waze", description: "Tráfico en tiempo real" },
-  { id: "osmand", name: "OsmAnd", description: "100% Offline" },
-  { id: "inapp", name: "In-App", description: "Guiado integrado con voz" },
+  { id: "google", name: "Google Maps", description: "Estándar" },
+  { id: "waze", name: "Waze", description: "Tráfico" },
+  { id: "osmand", name: "OsmAnd", description: "Offline" },
+  { id: "inapp", name: "In-App", description: "Con Voz" },
 ];
 
 const NAV_APP_STORAGE_KEY = "rutafacil_preferred_nav_app";
