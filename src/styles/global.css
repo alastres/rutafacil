@@ -2370,7 +2370,9 @@ input {
 /* ============ Modal de Despacho ============ */
 .dispatch-modal {
   max-width: 460px;
-  padding-bottom: 8px;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 .dispatch-title {
@@ -2389,8 +2391,9 @@ input {
   border-radius: 10px;
   padding: 4px;
   gap: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .dispatch-kind-btn {
@@ -2399,11 +2402,11 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 7px;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--pintura-blanca);
   background: transparent;
   border: none;
@@ -2459,9 +2462,12 @@ input {
 .dispatch-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
+  gap: 12px;
+  padding: 14px 18px 20px 18px;
   margin: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dispatch-field {
