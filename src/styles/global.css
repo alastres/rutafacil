@@ -2693,3 +2693,58 @@ input {
   margin: 12px 0;
 }
 
+.custom-ad-card {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(247, 198, 0, 0.4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--pintura-blanca);
+  transition: background 0.18s ease;
+}
+
+.custom-ad-card:hover {
+  background: rgba(247, 198, 0, 0.08);
+}
+
+.custom-ad-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--pintura);
+  color: var(--asfalto);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.custom-ad-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.custom-ad-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--pintura-blanca);
+  margin-bottom: 2px;
+}
+
+.custom-ad-desc {
+  font-size: 0.74rem;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
