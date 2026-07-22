@@ -1,20 +1,24 @@
-import { lazy, Suspense, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { activeOverlays } from "../lib/overlays";
 import { CloseIcon, CheckIcon } from "./icons";
 import { MODES } from "./ModeSelector";
 import { formatElapsed, type RouteHistoryRecord } from "../lib/historyDb";
+import RouteDetailMap from "./RouteDetailMap";
 
-const RouteDetailMap = lazy(() => import("./RouteDetailMap"));
-
-function formatDateFull(ts: number): string {
-  return new Date(ts).toLocaleString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatDateFull(ts?: number | null): string {
+  if (!ts) return "—";
+  try {
+    return new Date(ts).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
 }
 
 export function RouteDetailModal({
@@ -24,24 +28,42 @@ export function RouteDetailModal({
   record: RouteHistoryRecord;
   onClose: () => void;
 }) {
-  const stops = record.stops ?? [];
-  const modeMeta = MODES.find((m) => m.value === record.mode);
+  const stops = record?.stops ?? [];
+  const modeMeta = MODES.find((m) => m.value === record?.mode);
+
+  const mountTimeRef = useRef(Date.now());
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    return activeOverlays.register(onClose);
-  }, [onClose]);
+    mountTimeRef.current = Date.now();
+    return activeOverlays.register(() => onCloseRef.current());
+  }, []);
+
+  if (!record) return null;
+
+  const hasDistance = typeof record.distanceKm === "number" && !isNaN(record.distanceKm);
+  const hasElapsed = typeof record.elapsedMs === "number" && !isNaN(record.elapsedMs);
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Ignorar clics en el fondo durante los primeros 350ms tras montarse
+    if (Date.now() - mountTimeRef.current < 350) return;
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   return createPortal(
     <div
-      className="history-overlay"
+      className="history-overlay history-overlay--detail"
       role="dialog"
       aria-modal="true"
-      aria-label={`Detalle de ${record.label}`}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      aria-label={`Detalle de ${record.label || "Ruta"}`}
+      onClick={handleBackdropClick}
     >
       <div className="history-panel history-detail">
         <div className="history-panel__header">
-          <h2>{record.label}</h2>
+          <h2>{record.label || "Detalle de Ruta"}</h2>
           <button className="history-close" onClick={onClose} aria-label="Cerrar detalle">
             <CloseIcon width={16} height={16} />
           </button>
@@ -73,23 +95,23 @@ export function RouteDetailModal({
             </div>
             <div>
               <dt>Duración</dt>
-              <dd>{record.elapsedMs !== null ? formatElapsed(record.elapsedMs) : "—"}</dd>
+              <dd>{hasElapsed ? formatElapsed(record.elapsedMs!) : "—"}</dd>
             </div>
             <div>
               <dt>Distancia</dt>
-              <dd>{record.distanceKm !== null ? `${record.distanceKm.toFixed(1)} km` : "—"}</dd>
+              <dd>{hasDistance ? `${record.distanceKm!.toFixed(1)} km` : "—"}</dd>
             </div>
             <div>
               <dt>Vehículo</dt>
               <dd className="history-detail__mode">
                 {modeMeta && <modeMeta.Icon width={14} height={14} />}
-                {modeMeta?.label ?? record.mode}
+                {modeMeta?.label ?? record.mode ?? "Auto"}
               </dd>
             </div>
             <div>
               <dt>Paradas</dt>
               <dd>
-                {record.stopsDelivered}/{record.stopsTotal} entregadas
+                {record.stopsDelivered ?? 0}/{record.stopsTotal ?? 0} entregadas
               </dd>
             </div>
             <div>
@@ -100,23 +122,21 @@ export function RouteDetailModal({
 
           {stops.length > 0 ? (
             <>
-              <Suspense fallback={<div className="map-wrap" />}>
-                <RouteDetailMap
-                  stops={stops}
-                  geometry={record.geometry}
-                  origin={record.origin}
-                  returnPoint={record.returnPoint}
-                />
-              </Suspense>
+              <RouteDetailMap
+                stops={stops}
+                geometry={record.geometry}
+                origin={record.origin}
+                returnPoint={record.returnPoint}
+              />
 
               <ol className="history-detail__stops">
                 {stops.map((s, i) => (
-                  <li key={s.id} className={s.delivered ? "is-delivered" : ""}>
+                  <li key={s.id || i} className={s.delivered ? "is-delivered" : ""}>
                     <span className="history-detail__stop-n">
                       {s.delivered ? <CheckIcon width={12} height={12} /> : i + 1}
                     </span>
-                    <span className="history-detail__stop-label">{s.label}</span>
-                    {s.legKm !== undefined && (
+                    <span className="history-detail__stop-label">{s.label || `Parada ${i + 1}`}</span>
+                    {typeof s.legKm === "number" && !isNaN(s.legKm) && (
                       <span className="history-detail__stop-km">+{s.legKm.toFixed(1)} km</span>
                     )}
                   </li>
@@ -125,8 +145,7 @@ export function RouteDetailModal({
             </>
           ) : (
             <p className="history-empty">
-              Esta ruta se guardó antes de que el detalle registrara las paradas, así que no
-              hay recorrido que mostrar.
+              Esta ruta no tiene paradas registradas en el historial.
             </p>
           )}
         </div>

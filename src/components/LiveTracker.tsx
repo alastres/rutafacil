@@ -6,6 +6,7 @@ import { distanceToPolylineKm, haversineKm, type LatLng } from "../lib/geo";
 import { showToast } from "../lib/toast";
 import { AlertIcon, CheckIcon } from "./icons";
 import { triggerArrivalNotification } from "../lib/notification";
+import { speak, stopSpeech } from "../lib/speech";
 
 /** A partir de qué desviación (m) se recalcula la ruta */
 const DEVIATION_M = 60;
@@ -20,14 +21,24 @@ function notifyError(text: string) {
  * Observa la posición GPS del usuario en vivo (watchPosition) y la guarda en
  * el store para que el mapa y la lista la reflejen. Si el usuario se sale de la
  * ruta (desviación > DEVIATION_M), recalcula automáticamente desde su posición.
- * No renderiza nada: es un efecto global montado en App.
+ * Emite alertas de voz (Web Speech API) al iniciar, al acercarse a 200m y al llegar a 50m.
  */
 export function LiveTracker() {
   const tracking = useRouteStore((s) => s.tracking);
   const lastReroute = useRef(0);
+  const announced200m = useRef<string | null>(null);
+  const announcedArrival = useRef<string | null>(null);
+  const announcedStart = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!tracking) return;
+    if (!tracking) {
+      stopSpeech();
+      announced200m.current = null;
+      announcedArrival.current = null;
+      announcedStart.current = null;
+      return;
+    }
+
     if (!navigator.geolocation) {
       notifyError("Este dispositivo no soporta geolocalización.");
       useRouteStore.getState().stopTracking();
@@ -36,7 +47,6 @@ export function LiveTracker() {
 
     let rerouting = false;
     let gotFix = false;
-    // Avisa si pasa un rato sin ninguna posición (p. ej. permiso de GPS pendiente)
     const noFixTimer = window.setTimeout(() => {
       if (!gotFix) {
         notifyError(
@@ -59,12 +69,29 @@ export function LiveTracker() {
         const { geometry, stops } = store;
         const pending = stops.filter((s) => !s.delivered);
 
-        // Notificar si llegamos a la siguiente parada (menos de 50 metros)
         if (pending.length > 0) {
           const nextStop = pending[0];
           const distKm = haversineKm(p, nextStop);
           const distM = distKm * 1000;
-          if (distM < 50) {
+
+          // Anuncio de inicio de navegación
+          if (announcedStart.current !== nextStop.id) {
+            announcedStart.current = nextStop.id;
+            speak(`Navegando hacia ${nextStop.label}`);
+          }
+
+          // Aviso a 200 metros
+          if (distM <= 250 && distM > 50 && announced200m.current !== nextStop.id) {
+            announced200m.current = nextStop.id;
+            speak(`A 200 metros de ${nextStop.label}`);
+          }
+
+          // Aviso de llegada a menos de 50 metros
+          if (distM <= 50) {
+            if (announcedArrival.current !== nextStop.id) {
+              announcedArrival.current = nextStop.id;
+              speak(`Has llegado a ${nextStop.label}`);
+            }
             void triggerArrivalNotification(nextStop);
           }
         }
@@ -101,6 +128,7 @@ export function LiveTracker() {
 async function reroute(pending: Stop[], from: LatLng) {
   const { mode, returnPoint } = useRouteStore.getState();
   const version = useRouteStore.getState().beginRouteRequest();
+  speak("Desviación detectada, recalculando ruta");
   const trip = await withLoader(() =>
     tripThroughStreets(from, pending, { mode, returnPoint: returnPoint ?? undefined }),
   );

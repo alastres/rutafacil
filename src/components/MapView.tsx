@@ -270,12 +270,17 @@ export default function MapView() {
       }
       liveMarkerRef.current.setLngLat([pos.lng, pos.lat]);
       const follow = () => {
-        if (map.isMoving()) return;
+        if (map.isMoving() && !tracking) return;
         map.stop();
-        map.easeTo({ center: [pos.lng, pos.lat], duration: 800 });
+        map.easeTo({
+          center: [pos.lng, pos.lat],
+          zoom: tracking ? 16 : Math.max(map.getZoom(), 14),
+          pitch: tracking ? 45 : 0,
+          duration: 800,
+        });
       };
       if (map.loaded()) {
-        if (!map.getBounds().contains([pos.lng, pos.lat])) follow();
+        follow();
       } else {
         map.once("load", follow);
       }

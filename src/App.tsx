@@ -15,12 +15,12 @@ import { EmptyState } from "./components/EmptyState";
 import { OptimizeBar } from "./components/OptimizeBar";
 import { StopsOffcanvas } from "./components/StopsOffcanvas";
 import { LiveTracker } from "./components/LiveTracker";
+import { NavigationBanner } from "./components/NavigationBanner";
 import { ModeSelector } from "./components/ModeSelector";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { CheckIcon, AlertIcon } from "./components/icons";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
-
 
 const MapView = lazy(() => import("./components/MapView"));
 
@@ -38,9 +38,7 @@ export default function App() {
   }, []);
 
   /**
-   * Procesa texto compartido o pegado — puede traer VARIAS ubicaciones
-   * (una conversación entera de WhatsApp). Los enlaces acortados se
-   * resuelven vía /api/resolve. Devuelve true si agregó alguna parada.
+   * Procesa texto compartido o pegado.
    */
   const ingest = useCallback(
     async (text: string): Promise<boolean> => {
@@ -88,8 +86,6 @@ export default function App() {
     [addStop, notify],
   );
 
-  // Entrada por el menú Compartir de Android (share_target del manifest):
-  // el enlace llega en ?text= (a veces en ?url= o ?title=)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shared = [params.get("title"), params.get("text"), params.get("url")]
@@ -100,91 +96,85 @@ export default function App() {
       void ingest(shared);
       window.history.replaceState(null, "", "/");
     }
-    // Solo al cargar la app
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pide almacenamiento persistente para que el navegador no borre el
-  // historial (IndexedDB) automáticamente si necesita liberar espacio.
   useEffect(() => {
     void ensurePersistentStorage();
   }, []);
 
   const hasStops = stops.length > 0;
 
-  return (<BackSwipeHandler>
-    <ErrorBoundary>
-      <div className={`app-container${hasStops ? " has-stops" : " is-empty"}`}>
-        <GlobalLoader />
-        <Header />
+  return (
+    <BackSwipeHandler>
+      <ErrorBoundary>
+        <div className={`app-container${hasStops ? " has-stops" : " is-empty"}`}>
+          <GlobalLoader />
+          <Header />
+          <NavigationBanner />
 
-      {/* Antes de armar una ruta: campo para agregar la primera parada.
-          Una vez hay paradas, agregar más se hace desde el offcanvas
-          (evita duplicar el mismo campo en dos lugares). */}
-      {!hasStops && (
-        <>
-          <AddStop onSubmit={ingest} onNotify={notify} />
-          <div className="controls-bar">
-            <ReturnPointTrigger onNotify={notify} />
-            <ModeSelector />
-          </div>
-        </>
-      )}
+          {!hasStops && (
+            <>
+              <AddStop onSubmit={ingest} onNotify={notify} />
+              <div className="controls-bar">
+                <ReturnPointTrigger onNotify={notify} />
+                <ModeSelector />
+              </div>
+            </>
+          )}
 
-      {/* Mapa ocupa todo el espacio flexible cuando hay paradas */}
-      {hasStops ? (
-        <div className="map-container-fill">
-          <Suspense fallback={<div className="map-wrap map-wrap--fill" />}>
-            <MapView />
-          </Suspense>
-          <div className="map-floating-controls">
-            <ReturnPointTrigger onNotify={notify} />
-            <ModeSelector />
-          </div>
+          {hasStops ? (
+            <div className="map-container-fill">
+              <Suspense fallback={<div className="map-wrap map-wrap--fill" />}>
+                <MapView />
+              </Suspense>
+              <div className="map-floating-controls">
+                <ReturnPointTrigger onNotify={notify} />
+                <ModeSelector />
+              </div>
+            </div>
+          ) : (
+            <EmptyState />
+          )}
+
+          {hasStops && (
+            <StopsOffcanvas
+              open={showList}
+              moving={moving}
+              onClose={() => setShowList(false)}
+              onAddStop={ingest}
+              onNotify={notify}
+            />
+          )}
+
+          <OptimizeBar
+            onNotify={notify}
+            onMoving={setMoving}
+            onToggleList={() => setShowList((v) => !v)}
+          />
+          <LiveTracker />
+          <PWAInstallBanner />
+
+          <Toaster
+            position="bottom-center"
+            containerStyle={{ bottom: 92, left: 0, right: 0 }}
+            toastOptions={{
+              duration: 4000,
+              className: "rht",
+              style: {
+                background: "var(--asfalto)",
+                color: "var(--pintura-blanca)",
+                borderLeft: "6px solid var(--pintura)",
+                borderRadius: "var(--radius)",
+                fontFamily: "var(--font-body)",
+                fontSize: "0.92rem",
+                maxWidth: "432px",
+                boxShadow: "0 10px 30px rgba(33, 30, 26, 0.35)",
+              },
+            }}
+          />
+          <PushPermissionRequester />
         </div>
-      ) : (
-        <EmptyState />
-      )}
-
-      {/* Lista de paradas como offcanvas */}
-      {hasStops && (
-        <StopsOffcanvas
-          open={showList}
-          moving={moving}
-          onClose={() => setShowList(false)}
-          onAddStop={ingest}
-          onNotify={notify}
-        />
-      )}
-
-      <OptimizeBar
-        onNotify={notify}
-        onMoving={setMoving}
-        onToggleList={() => setShowList((v) => !v)}
-      />
-      <LiveTracker />
-      <PWAInstallBanner />
-
-      <Toaster
-        position="bottom-center"
-        containerStyle={{ bottom: 92, left: 0, right: 0 }}
-        toastOptions={{
-          duration: 4000,
-          className: "rht",
-          style: {
-            background: "var(--asfalto)",
-            color: "var(--pintura-blanca)",
-            borderLeft: "6px solid var(--pintura)",
-            borderRadius: "var(--radius)",
-            fontFamily: "var(--font-body)",
-            fontSize: "0.92rem",
-            maxWidth: "432px",
-            boxShadow: "0 10px 30px rgba(33, 30, 26, 0.35)",
-          },
-        }}
-      />
-        <PushPermissionRequester />
-      </div>
-    </ErrorBoundary>
-  </BackSwipeHandler>);
+      </ErrorBoundary>
+    </BackSwipeHandler>
+  );
 }

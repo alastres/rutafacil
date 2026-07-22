@@ -4,8 +4,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { CHECK_SVG_MARKUP, PIN_SVG_MARKUP } from "./icons";
 import type { HistoryStop } from "../lib/historyDb";
 
-/** Mismo estilo base que el mapa principal, para que el detalle se vea
- * coherente con el resto de la app. */
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
@@ -22,8 +20,6 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "basemap", type: "raster", source: "basemap" }],
 };
 
-/** Mapa de solo lectura para la vista de detalle de una ruta guardada: no
- * depende de routeStore, recibe los datos directamente del registro. */
 export default function RouteDetailMap({
   stops,
   geometry,
@@ -48,6 +44,7 @@ export default function RouteDetailMap({
     });
 
     map.on("load", () => {
+      map.resize();
       const validStops = stops.filter(
         (s) => Number.isFinite(s.lng) && Number.isFinite(s.lat),
       );
@@ -64,26 +61,32 @@ export default function RouteDetailMap({
               : []),
           ];
 
-      map.addSource("route", {
-        type: "geojson",
-        data: { type: "Feature", geometry: { type: "LineString", coordinates: lineCoords }, properties: {} },
-      });
-      map.addLayer({
-        id: "route-casing",
-        type: "line",
-        source: "route",
-        paint: { "line-color": "#211E1A", "line-width": 7 },
-      });
-      map.addLayer({
-        id: "route-line",
-        type: "line",
-        source: "route",
-        paint: {
-          "line-color": "#F7C600",
-          "line-width": 4,
-          "line-dasharray": hasStreetGeometry ? [1, 0] : [2, 1.5],
-        },
-      });
+      if (lineCoords.length >= 2) {
+        map.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: lineCoords },
+            properties: {},
+          },
+        });
+        map.addLayer({
+          id: "route-casing",
+          type: "line",
+          source: "route",
+          paint: { "line-color": "#211E1A", "line-width": 7 },
+        });
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          paint: {
+            "line-color": "#F7C600",
+            "line-width": 4,
+            "line-dasharray": hasStreetGeometry ? [1, 0] : [2, 1.5],
+          },
+        });
+      }
 
       const bounds = new maplibregl.LngLatBounds();
       validStops.forEach((s, i) => {
@@ -114,8 +117,7 @@ export default function RouteDetailMap({
     });
 
     return () => map.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stops, geometry, origin, returnPoint]);
 
   return <div className="map-wrap" ref={container} />;
 }

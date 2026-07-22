@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { activeOverlays } from "../lib/overlays";
 import { FaTrash, FaPen, FaClockRotateLeft, FaEye } from "react-icons/fa6";
 import { useHistoryStore } from "../state/historyStore";
@@ -36,8 +36,11 @@ export function HistoryPanel() {
   const activeHistoryId = useRouteStore((s) => s.historyId);
   const detachHistory = useRouteStore((s) => s.detachHistory);
 
+  const panelMountTimeRef = useRef(Date.now());
+
   useEffect(() => {
     if (open) {
+      panelMountTimeRef.current = Date.now();
       void refresh();
       void isStoragePersisted().then(setPersisted);
     } else {
@@ -105,7 +108,10 @@ export function HistoryPanel() {
           role="dialog"
           aria-modal="true"
           aria-label="Historial de rutas"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+          onClick={(e) => {
+            if (Date.now() - panelMountTimeRef.current < 350) return;
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
         >
           <div className="history-panel">
             <div className="history-panel__header">
@@ -280,10 +286,12 @@ function HistoryItem({
       </div>
       <div className="history-item__stats">
         <span>
-          {record.stopsDelivered}/{record.stopsTotal} entregadas
+          {record.stopsDelivered ?? 0}/{record.stopsTotal ?? 0} entregadas
         </span>
-        {record.distanceKm !== null && <span>{record.distanceKm.toFixed(1)} km</span>}
-        {record.elapsedMs !== null && (
+        {typeof record.distanceKm === "number" && !isNaN(record.distanceKm) && (
+          <span>{record.distanceKm.toFixed(1)} km</span>
+        )}
+        {typeof record.elapsedMs === "number" && !isNaN(record.elapsedMs) && (
           <span>Duración: {formatElapsed(record.elapsedMs)}</span>
         )}
       </div>
@@ -291,7 +299,10 @@ function HistoryItem({
         <div className="history-item__actions">
           <button
             className="history-icon-btn"
-            onClick={onViewDetail}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetail();
+            }}
             aria-label={`Ver detalle de ${record.label}`}
           >
             <FaEye size={13} />

@@ -1,8 +1,18 @@
+import { useState } from "react";
 import { AnimatePresence, motion, Reorder, useDragControls } from "motion/react";
-import { googleMapsNavUrl } from "../lib/nav";
+import { getPreferredNavApp, setPreferredNavApp, getNavUrl, NAV_APP_OPTIONS, type NavApp } from "../lib/nav";
+import { downloadGpx } from "../lib/gpx";
 import { haversineKm } from "../lib/geo";
 import { useRouteStore, type Stop } from "../state/routeStore";
-import { CheckIcon, CloseIcon, ArrowRightIcon, PinIcon, DragHandleIcon } from "./icons";
+import {
+  CheckIcon,
+  CloseIcon,
+  ArrowRightIcon,
+  PinIcon,
+  DragHandleIcon,
+  DownloadIcon,
+  CompassIcon,
+} from "./icons";
 
 export function RoadList({ moving }: { moving: boolean }) {
   const stops = useRouteStore((s) => s.stops);
@@ -11,8 +21,12 @@ export function RoadList({ moving }: { moving: boolean }) {
   const byStreets = useRouteStore((s) => s.byStreets);
   const origin = useRouteStore((s) => s.origin);
   const live = useRouteStore((s) => s.live);
+  const mode = useRouteStore((s) => s.mode);
   const returnPoint = useRouteStore((s) => s.returnPoint);
   const returnLegKm = useRouteStore((s) => s.returnLegKm);
+
+  const [navApp, setNavApp] = useState<NavApp>(getPreferredNavApp());
+
   const optimized = optimizedKm !== null;
   const nextStop = stops.find((s) => !s.delivered);
   const nextId = nextStop?.id;
@@ -23,13 +37,53 @@ export function RoadList({ moving }: { moving: boolean }) {
   // Distancia/ETA en vivo desde la posición GPS al siguiente punto
   let liveInfo: string | null = null;
   if (live && nextStop) {
-    const km = haversineKm(live, nextStop) * 1.25; // factor urbano (calles + tránsito)
+    const km = haversineKm(live, nextStop) * 1.25; // factor urbano
     const min = Math.round((km / 20) * 60);
     liveInfo = `a ${km.toFixed(1)} km · ~${min} min`;
   }
 
+  const handleNavAppChange = (app: NavApp) => {
+    setNavApp(app);
+    setPreferredNavApp(app);
+  };
+
+  const handleExportGpx = () => {
+    downloadGpx(stops, origin || live, "rutafacil_reparto");
+  };
+
   return (
     <div className={`stop-list${moving ? " is-moving" : ""}`}>
+      {/* Selector de Navegador y Exportación GPX */}
+      {optimized && pendingStops.length > 0 && (
+        <div className="sl-nav-tools">
+          <div className="sl-nav-app-selector">
+            <label htmlFor="nav-app-select" className="sl-nav-label">
+              <CompassIcon size={12} /> Navegar con:
+            </label>
+            <select
+              id="nav-app-select"
+              value={navApp}
+              onChange={(e) => handleNavAppChange(e.target.value as NavApp)}
+              className="sl-select"
+            >
+              {NAV_APP_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name} ({opt.description})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="sl-gpx-btn"
+            onClick={handleExportGpx}
+            title="Exportar archivo GPX completo para OsmAnd o GPS"
+          >
+            <DownloadIcon size={12} /> GPX
+          </button>
+        </div>
+      )}
 
       {/* Encabezado: punto de partida */}
       {optimized && origin && (
@@ -80,6 +134,8 @@ export function RoadList({ moving }: { moving: boolean }) {
                 position={doneStops.length + j + 1}
                 isNext={stop.id === nextId && optimized}
                 legKm={optimized ? stop.legKm : undefined}
+                navApp={navApp}
+                mode={mode}
               />
             ))}
           </Reorder.Group>
@@ -141,16 +197,30 @@ function StopItemDraggable({
   position,
   isNext,
   legKm,
+  navApp,
+  mode,
 }: {
   stop: Stop;
   position: number;
   isNext: boolean;
   legKm?: number;
+  navApp: NavApp;
+  mode: string;
 }) {
   const renameStop = useRouteStore((s) => s.renameStop);
   const removeStop = useRouteStore((s) => s.removeStop);
   const toggleDelivered = useRouteStore((s) => s.toggleDelivered);
+  const startTracking = useRouteStore((s) => s.startTracking);
   const dragControls = useDragControls();
+
+  const handleNavigate = (e: React.MouseEvent) => {
+    if (navApp === "inapp") {
+      e.preventDefault();
+      startTracking();
+    }
+  };
+
+  const navUrl = getNavUrl(stop, navApp, mode);
 
   return (
     <Reorder.Item
@@ -203,9 +273,10 @@ function StopItemDraggable({
         <div className="sl-card-actions">
           <a
             className="sl-btn sl-btn--nav"
-            href={googleMapsNavUrl(stop)}
-            target="_blank"
+            href={navUrl}
+            target={navApp === "inapp" ? "_self" : "_blank"}
             rel="noopener noreferrer"
+            onClick={handleNavigate}
           >
             Navegar <ArrowRightIcon size={13} />
           </a>

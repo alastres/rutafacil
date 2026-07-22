@@ -1231,6 +1231,10 @@ input {
   justify-content: center;
 }
 
+.history-overlay--detail {
+  z-index: 1000;
+}
+
 .history-panel {
   width: 100%;
   max-width: 480px;
@@ -2104,3 +2108,185 @@ input {
 .stops-offcanvas__body .stop-list {
   padding-bottom: 24px;
 }
+
+/* ============ Banner de Navegación In-App ============ */
+.nav-banner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 100;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border: 2px solid var(--pintura);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: bannerSlideDown 0.25s ease-out;
+}
+
+@keyframes bannerSlideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.nav-banner-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-banner-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pintura);
+  color: var(--asfalto);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.nav-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-banner-distance {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--pintura);
+  line-height: 1.2;
+}
+
+.nav-banner-eta {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.nav-banner-target {
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.nav-banner-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--pintura-blanca);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-banner-btn.is-muted {
+  background: var(--cono);
+  color: var(--pintura-blanca);
+}
+
+.nav-banner-deliver-btn {
+  width: 100%;
+  background: var(--senal-verde);
+  color: var(--pintura-blanca);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* ============ Herramientas de Navegador y GPX en RoadList ============ */
+.sl-nav-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+  border-radius: var(--radius);
+}
+
+.sl-nav-app-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sl-nav-label {
+  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--pintura);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.sl-select {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--pintura-blanca);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sl-select option {
+  background: var(--asfalto);
+  color: var(--pintura-blanca);
+}
+
+.sl-gpx-btn {
+  background: var(--pintura);
+  color: var(--asfalto);
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
