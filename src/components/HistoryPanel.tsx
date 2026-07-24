@@ -195,7 +195,7 @@ export function HistoryPanel() {
               </p>
             )}
 
-            <AdBanner slotId="history-bottom" />
+            <AdBanner slotId="history-bottom" format="rectangle" />
           </div>
         </div>,
         document.body

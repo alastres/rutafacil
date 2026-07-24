@@ -1,11 +1,13 @@
 import { useEffect, useRef } from "react";
 import { FaArrowUpRightFromSquare, FaBullhorn } from "react-icons/fa6";
 
-export type AdProvider = "adsense" | "monetag" | "ethicalads" | "custom" | "none";
+export type AdProvider = "adsense" | "monetag" | "ethicalads" | "adsterra" | "custom" | "none";
 
 interface AdBannerProps {
   slotId?: string;
   zoneId?: string;
+  adsterraKey?: string;
+  adsterraSize?: "320x50" | "300x250";
   format?: "auto" | "rectangle" | "horizontal";
   customTitle?: string;
   customDesc?: string;
@@ -16,30 +18,77 @@ interface AdBannerProps {
 /**
  * Componente universal de publicidad para RutaFácil.
  * Soporta:
- * 1. Monetag (Funciona HOY en subdominio .vercel.app)
- * 2. EthicalAds (Anuncios éticos para herramientas/logística)
- * 3. Banners Propios / Patrocinadores Locales (Personalizables)
- * 4. Google AdSense (Para cuando compres el dominio propio)
+ * 1. Adsterra (Banners limpios 320x50 y 300x250)
+ * 2. Monetag (Notificaciones e In-Page Push)
+ * 3. EthicalAds (Anuncios éticos para herramientas/logística)
+ * 4. Banners Propios / Patrocinadores Locales (Personalizables)
+ * 5. Google AdSense (Para cuando compres el dominio propio)
  */
 export function AdBanner({
   slotId = "1234567890",
   zoneId,
+  adsterraKey,
+  adsterraSize,
   format = "auto",
   customTitle = "Patrocinado · Anúnciate en RutaFácil",
-  customDesc = "Conecta tus servicios de domicilios orepuestos con repartidores en vivo.",
+  customDesc = "Conecta tus servicios de domicilios o repuestos con repartidores en vivo.",
   customLink = "https://rutafacil.app",
   className = "",
 }: AdBannerProps) {
   const adRef = useRef<HTMLModElement>(null);
+  const adsterraRef = useRef<HTMLDivElement>(null);
 
   // Proveedor y llaves configurables vía variables de entorno Vercel (.env)
-  const provider: AdProvider = (import.meta.env.VITE_AD_PROVIDER as AdProvider) || "none";
+  const provider: AdProvider =
+    (import.meta.env.VITE_AD_PROVIDER as AdProvider) ||
+    (import.meta.env.VITE_ADSTERRA_KEY ? "adsterra" : "none");
+
   const pubId = import.meta.env.VITE_ADSENSE_PUB_ID;
   const monetagScriptUrl = import.meta.env.VITE_MONETAG_SCRIPT_URL;
   const ethicalPublisher = import.meta.env.VITE_ETHICALADS_PUBLISHER;
 
+  // Determinar tamaño de Adsterra (300x250 para rectángulos o 320x50 por defecto)
+  const isRectangle = adsterraSize === "300x250" || format === "rectangle";
+  const width = isRectangle ? 300 : 320;
+  const height = isRectangle ? 250 : 50;
+
+  // Claves por defecto según el tamaño
+  const defaultKey = isRectangle
+    ? "58d6a373a56f38ea21da3c86d22f0a4b" // Adsterra 300x250
+    : "bcfc3c7bf46c74a9ce7721be94114321"; // Adsterra 320x50
+
+  const activeAdsterraKey =
+    adsterraKey ||
+    (isRectangle ? import.meta.env.VITE_ADSTERRA_KEY_300X250 : import.meta.env.VITE_ADSTERRA_KEY_320X50) ||
+    import.meta.env.VITE_ADSTERRA_KEY ||
+    defaultKey;
+
   useEffect(() => {
-    // 1. Google AdSense Injection
+    // 1. Adsterra Script Mount
+    if (provider === "adsterra" && adsterraRef.current) {
+      adsterraRef.current.innerHTML = "";
+
+      const confScript = document.createElement("script");
+      confScript.type = "text/javascript";
+      confScript.text = `
+        atOptions = {
+          'key' : '${activeAdsterraKey}',
+          'format' : 'iframe',
+          'height' : ${height},
+          'width' : ${width},
+          'params' : {}
+        };
+      `;
+
+      const invokeScript = document.createElement("script");
+      invokeScript.type = "text/javascript";
+      invokeScript.src = `https://www.highperformanceformat.com/${activeAdsterraKey}/invoke.js`;
+
+      adsterraRef.current.appendChild(confScript);
+      adsterraRef.current.appendChild(invokeScript);
+    }
+
+    // 2. Google AdSense Injection
     if (provider === "adsense" && pubId) {
       const scriptId = "adsense-script";
       if (!document.getElementById(scriptId)) {
@@ -59,7 +108,7 @@ export function AdBanner({
       }
     }
 
-    // 2. Monetag Script Injection (Funciona en Vercel)
+    // 3. Monetag Script Injection (Funciona en Vercel)
     if (provider === "monetag" && monetagScriptUrl) {
       const scriptId = "monetag-script";
       if (!document.getElementById(scriptId)) {
@@ -71,7 +120,7 @@ export function AdBanner({
       }
     }
 
-    // 3. EthicalAds Script Injection
+    // 4. EthicalAds Script Injection
     if (provider === "ethicalads") {
       const scriptId = "ethicalads-script";
       if (!document.getElementById(scriptId)) {
@@ -82,14 +131,26 @@ export function AdBanner({
         document.head.appendChild(script);
       }
     }
-  }, [provider, pubId, monetagScriptUrl]);
+  }, [provider, pubId, monetagScriptUrl, activeAdsterraKey, width, height]);
 
   // Si está en "none", devuelve null (0 píxeles consumidos)
   if (provider === "none") {
     return null;
   }
 
-  // A. Google AdSense (Dominio Propio)
+  // A. Adsterra (Banners limpios 320x50 y 300x250)
+  if (provider === "adsterra") {
+    return (
+      <div className={`ad-banner-wrapper ${className}`}>
+        <div
+          ref={adsterraRef}
+          style={{ width, height, margin: "0 auto", overflow: "hidden" }}
+        />
+      </div>
+    );
+  }
+
+  // B. Google AdSense (Dominio Propio)
   if (provider === "adsense" && pubId) {
     return (
       <div className={`ad-banner-wrapper ${className}`}>
@@ -106,7 +167,7 @@ export function AdBanner({
     );
   }
 
-  // B. Monetag / Redes Alternativas (Funciona en .vercel.app)
+  // C. Monetag / Redes Alternativas (Funciona en .vercel.app)
   if (provider === "monetag") {
     const activeZone = zoneId || import.meta.env.VITE_MONETAG_ZONE_ID || "default";
     return (
@@ -118,7 +179,7 @@ export function AdBanner({
     );
   }
 
-  // C. EthicalAds (Anuncios Tech/Logística)
+  // D. EthicalAds (Anuncios Tech/Logística)
   if (provider === "ethicalads" && ethicalPublisher) {
     return (
       <div className={`ad-banner-wrapper ${className}`}>
@@ -132,7 +193,7 @@ export function AdBanner({
     );
   }
 
-  // D. Banner Propio / Patrocinador Local (Personalizable hoy)
+  // E. Banner Propio / Patrocinador Local (Personalizable hoy)
   if (provider === "custom") {
     return (
       <div className={`ad-banner-wrapper ${className}`}>
