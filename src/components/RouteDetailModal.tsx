@@ -165,7 +165,7 @@ export function RouteDetailModal({
               Esta ruta no tiene paradas registradas en el historial.
             </p>
           )}
-          <AdBanner slotId="route-detail-bottom" format="rectangle" />
+          <AdBanner slotId="route-detail-bottom" adsterraSize="320x50" />
         </div>
       </div>
     </div>,

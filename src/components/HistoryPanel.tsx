@@ -7,7 +7,6 @@ import { useRouteStore } from "../state/routeStore";
 import {
   defaultRouteLabel,
   formatElapsed,
-  isStoragePersisted,
   type RouteHistoryRecord,
 } from "../lib/historyDb";
 import { generateSingleRouteReport, generateBatchRouteReport, shareText } from "../lib/share";
@@ -29,7 +28,6 @@ function formatDate(ts: number): string {
 export function HistoryPanel() {
   const [open, setOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<RouteHistoryRecord | null>(null);
-  const [persisted, setPersisted] = useState<boolean | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const records = useHistoryStore((s) => s.records);
@@ -44,7 +42,6 @@ export function HistoryPanel() {
     if (open) {
       panelMountTimeRef.current = Date.now();
       void refresh();
-      void isStoragePersisted().then(setPersisted);
     } else {
       setSelectMode(false);
       setSelected(new Set());
@@ -187,15 +184,7 @@ export function HistoryPanel() {
               </div>
             )}
 
-            {persisted !== null && (
-              <p className="history-storage-note">
-                {persisted
-                  ? "Almacenamiento persistente activado: el navegador no debería borrar este historial por falta de espacio."
-                  : "Almacenamiento no marcado como persistente todavía (algunos navegadores lo conceden solo con la app instalada o de más uso)."}
-              </p>
-            )}
-
-            <AdBanner slotId="history-bottom" format="rectangle" />
+            <AdBanner slotId="history-bottom" adsterraSize="320x50" />
           </div>
         </div>,
         document.body
