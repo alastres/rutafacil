@@ -18,7 +18,7 @@ interface AdBannerProps {
 /**
  * Componente universal de publicidad para RutaFácil.
  * Soporta:
- * 1. Adsterra (Banners limpios 320x50 y 300x250 activados por defecto)
+ * 1. Adsterra (Banners limpios 320x50 y 300x250)
  * 2. Monetag (Notificaciones e In-Page Push)
  * 3. EthicalAds (Anuncios éticos para herramientas/logística)
  * 4. Banners Propios / Patrocinadores Locales (Personalizables)
@@ -67,7 +67,6 @@ export function AdBanner({
     if (provider === "adsterra" && adsterraRef.current) {
       adsterraRef.current.innerHTML = "";
 
-      // Inyectar atOptions tanto en el scope global como en el contenedor
       const options = {
         key: activeAdsterraKey,
         format: "iframe",
@@ -218,3 +217,6 @@ export function AdBanner({
       </div>
     );
   }
+
+  return null;
+}
