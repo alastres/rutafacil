@@ -18,7 +18,7 @@ interface AdBannerProps {
 /**
  * Componente universal de publicidad para RutaFácil.
  * Soporta:
- * 1. Adsterra (Banners limpios 320x50 y 300x250)
+ * 1. Adsterra (Banners limpios 320x50 y 300x250 aislados en iframe PWA)
  * 2. Monetag (Notificaciones e In-Page Push)
  * 3. EthicalAds (Anuncios éticos para herramientas/logística)
  * 4. Banners Propios / Patrocinadores Locales (Personalizables)
@@ -36,7 +36,6 @@ export function AdBanner({
   className = "",
 }: AdBannerProps) {
   const adRef = useRef<HTMLModElement>(null);
-  const adsterraRef = useRef<HTMLDivElement>(null);
 
   // Por defecto se activa 'adsterra' a menos que se defina explícitamente otro proveedor en .env
   const provider: AdProvider =
@@ -63,34 +62,7 @@ export function AdBanner({
     defaultKey;
 
   useEffect(() => {
-    // 1. Adsterra Script Mount
-    if (provider === "adsterra" && adsterraRef.current) {
-      adsterraRef.current.innerHTML = "";
-
-      const options = {
-        key: activeAdsterraKey,
-        format: "iframe",
-        height: height,
-        width: width,
-        params: {},
-      };
-
-      // @ts-expect-error Adsterra global options
-      window.atOptions = options;
-
-      const confScript = document.createElement("script");
-      confScript.type = "text/javascript";
-      confScript.text = `atOptions = ${JSON.stringify(options)};`;
-
-      const invokeScript = document.createElement("script");
-      invokeScript.type = "text/javascript";
-      invokeScript.src = `https://www.highperformanceformat.com/${activeAdsterraKey}/invoke.js`;
-
-      adsterraRef.current.appendChild(confScript);
-      adsterraRef.current.appendChild(invokeScript);
-    }
-
-    // 2. Google AdSense Injection
+    // 1. Google AdSense Injection
     if (provider === "adsense" && pubId) {
       const scriptId = "adsense-script";
       if (!document.getElementById(scriptId)) {
@@ -110,7 +82,7 @@ export function AdBanner({
       }
     }
 
-    // 3. Monetag Script Injection (Funciona en Vercel)
+    // 2. Monetag Script Injection (Funciona en Vercel)
     if (provider === "monetag" && monetagScriptUrl) {
       const scriptId = "monetag-script";
       if (!document.getElementById(scriptId)) {
@@ -122,7 +94,7 @@ export function AdBanner({
       }
     }
 
-    // 4. EthicalAds Script Injection
+    // 3. EthicalAds Script Injection
     if (provider === "ethicalads") {
       const scriptId = "ethicalads-script";
       if (!document.getElementById(scriptId)) {
@@ -133,20 +105,46 @@ export function AdBanner({
         document.head.appendChild(script);
       }
     }
-  }, [provider, pubId, monetagScriptUrl, activeAdsterraKey, width, height]);
+  }, [provider, pubId, monetagScriptUrl]);
 
   // Si está en "none", devuelve null (0 píxeles consumidos)
   if (provider === "none") {
     return null;
   }
 
-  // A. Adsterra (Banners limpios 320x50 y 300x250)
+  // A. Adsterra (Banners 320x50 y 300x250 aislados en iframe seguro para React)
   if (provider === "adsterra") {
+    const iframeHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: transparent; text-align: center; }
+  </style>
+</head>
+<body>
+  <script type="text/javascript">
+    atOptions = {
+      'key' : '${activeAdsterraKey}',
+      'format' : 'iframe',
+      'height' : ${height},
+      'width' : ${width},
+      'params' : {}
+    };
+  </script>
+  <script type="text/javascript" src="https://www.highperformanceformat.com/${activeAdsterraKey}/invoke.js"></script>
+</body>
+</html>`;
+
     return (
-      <div className={`ad-banner-wrapper ${className}`}>
-        <div
-          ref={adsterraRef}
-          style={{ width, height, margin: "0 auto", overflow: "hidden" }}
+      <div className={`ad-banner-wrapper ${className}`} style={{ minHeight: height, display: "flex", justifyContent: "center" }}>
+        <iframe
+          srcDoc={iframeHtml}
+          width={width}
+          height={height}
+          style={{ border: "none", overflow: "hidden", margin: "0 auto", display: "block" }}
+          scrolling="no"
+          title="Anuncio Adsterra"
         />
       </div>
     );
