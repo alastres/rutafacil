@@ -18,7 +18,7 @@ interface AdBannerProps {
 /**
  * Componente universal de publicidad para RutaFácil.
  * Soporta:
- * 1. Adsterra (Banners limpios 320x50 y 300x250)
+ * 1. Adsterra (Banners limpios 320x50 y 300x250 activados por defecto)
  * 2. Monetag (Notificaciones e In-Page Push)
  * 3. EthicalAds (Anuncios éticos para herramientas/logística)
  * 4. Banners Propios / Patrocinadores Locales (Personalizables)
@@ -38,10 +38,9 @@ export function AdBanner({
   const adRef = useRef<HTMLModElement>(null);
   const adsterraRef = useRef<HTMLDivElement>(null);
 
-  // Proveedor y llaves configurables vía variables de entorno Vercel (.env)
+  // Por defecto se activa 'adsterra' a menos que se defina explícitamente otro proveedor en .env
   const provider: AdProvider =
-    (import.meta.env.VITE_AD_PROVIDER as AdProvider) ||
-    (import.meta.env.VITE_ADSTERRA_KEY ? "adsterra" : "none");
+    (import.meta.env.VITE_AD_PROVIDER as AdProvider) || "adsterra";
 
   const pubId = import.meta.env.VITE_ADSENSE_PUB_ID;
   const monetagScriptUrl = import.meta.env.VITE_MONETAG_SCRIPT_URL;
@@ -52,7 +51,7 @@ export function AdBanner({
   const width = isRectangle ? 300 : 320;
   const height = isRectangle ? 250 : 50;
 
-  // Claves por defecto según el tamaño
+  // Claves creadas para Adsterra
   const defaultKey = isRectangle
     ? "58d6a373a56f38ea21da3c86d22f0a4b" // Adsterra 300x250
     : "bcfc3c7bf46c74a9ce7721be94114321"; // Adsterra 320x50
@@ -68,17 +67,21 @@ export function AdBanner({
     if (provider === "adsterra" && adsterraRef.current) {
       adsterraRef.current.innerHTML = "";
 
+      // Inyectar atOptions tanto en el scope global como en el contenedor
+      const options = {
+        key: activeAdsterraKey,
+        format: "iframe",
+        height: height,
+        width: width,
+        params: {},
+      };
+
+      // @ts-expect-error Adsterra global options
+      window.atOptions = options;
+
       const confScript = document.createElement("script");
       confScript.type = "text/javascript";
-      confScript.text = `
-        atOptions = {
-          'key' : '${activeAdsterraKey}',
-          'format' : 'iframe',
-          'height' : ${height},
-          'width' : ${width},
-          'params' : {}
-        };
-      `;
+      confScript.text = `atOptions = ${JSON.stringify(options)};`;
 
       const invokeScript = document.createElement("script");
       invokeScript.type = "text/javascript";
@@ -215,6 +218,3 @@ export function AdBanner({
       </div>
     );
   }
-
-  return null;
-}
